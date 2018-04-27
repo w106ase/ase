@@ -19,18 +19,21 @@ else
 	echo "C++ Project directory is being setup at: $orig_dir/$1"
 
 	# Create the default directories.
-	mkdir build doc include lib src test
+	mkdir build cmake doc include lib src test
 
 	# Generate the default CMakeLists file.
 	# Not sure why SED is creating a new file with -e appended.
-	cp $script_dir/CMakeListsDefault* ./CMakeLists.txt
+	cp $script_dir/cmake/CMakeListsDefault* ./CMakeLists.txt
 	sed -i -e "s/DEFAULT_PROJ_NAME/$proj_name/g" ./CMakeLists.txt
 	rm CMakeLists.txt-e
+
+	# Copy over the cmake modules directory.	
+	cp -r $script_dir/cmake/Modules ./cmake/
 
 	# Generate the default Doxyfile.in file.
 	# Not sure why SED is creating a new file with -e appended.
 	cd doc
-	cp $script_dir/DoxyfileDefault* ./Doxyfile.in
+	cp $script_dir/doxygen/DoxyfileDefault* ./Doxyfile.in
 	sed -i -e "s/DEFAULT_PROJ_NAME/$proj_name/g" ./Doxyfile.in
 	rm Doxyfile.in-e
 
