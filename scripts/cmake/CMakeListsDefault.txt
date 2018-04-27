@@ -4,6 +4,9 @@ cmake_minimum_required( VERSION "${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.$
 # Define the top level project name.
 project( DEFAULT_PROJ_NAME )
 
+# Use C++11.
+set( CMAKE_CXX_STANDARD 11 )
+
 # Add local cmake modules to the default cmake module path.
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/" )
 
