@@ -19,7 +19,7 @@ else
 	echo "C++ Project directory is being setup at: $orig_dir/$1"
 
 	# Create the default directories.
-	mkdir build cmake doc include lib src test
+	mkdir build cmake doc include lib src test test/data
 
 	# Generate the default CMakeLists file.
 	# Not sure why SED is creating a new file with -e appended.
