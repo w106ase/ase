@@ -1,0 +1,47 @@
+# General macOS
+.DS_Store
+
+# Xcode
+xcuserdata/
+project.xcworkspace/
+
+# QtCreator
+CMakeLists.txt.user
+
+# C++ libraries
+lib*.a
+*.dylib
+lib*.lib
+*.dll
+*.lib
+*.so
+
+# C++ build directory
+build/
+
+# MATLAB
+*.mexmaci64
+*.mexw64
+*.mexa64
+*.m~
+
+# Microsoft Office
+~$*.doc*
+~$*.xls*
+~$*.ppt*
+*.d
+*.make
+*.makeDebug
+*.makeRelease
+*.pbxproj
+CMakeCache.txt
+CMakeFiles
+
+# Other binary files
+*.tgz
+Makefile
+/doc/html
+/doc/latex
+
+# LaTeX configuration files.
+.ltxcfg
