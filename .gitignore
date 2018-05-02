@@ -1,6 +1,9 @@
 # General macOS
 .DS_Store
 
+# Doxyfile
+*.out
+
 # Xcode
 xcuserdata/
 project.xcworkspace/
