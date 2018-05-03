@@ -63,10 +63,11 @@ void real_valued_example( )
     grad_f_obj_at_x[ 1 ] = gamma*x[ 1 ];
   };
 
-  auto desc_dir = [ &grad_f_obj, &n ]( const vector< double >& x,
-                                       vector< double >& dx ) -> void
+  auto desc_dir = [ &n ]( const vector< double >& x,
+                          const vector< double >& grad_f_obj_at_x,
+                          vector< double >& dx ) -> void
   {
-    grad_f_obj( x, dx );
+    dx = grad_f_obj_at_x;
     cblas_dscal( n, -1.0, dx.data( ), 1 );
   };
 
@@ -74,7 +75,7 @@ void real_valued_example( )
   cout << "Starting point: ( " << x[ 0 ] << ", " << x[ 1 ] << " )" << endl;
   cout << "Initial objective function value: " << f_obj( x ) << endl;
 
-  ase::general_descent_method_with_btls( f_obj, grad_f_obj, desc_dir, x );
+  ase::cvx::general_descent_method_with_btls( f_obj, grad_f_obj, desc_dir, x );
 
   cout << "Ending point: ( " << x[ 0 ] << ", " << x[ 1 ] << " )" << endl;
   cout << "Ending objective function value: " << f_obj( x ) << endl;
@@ -100,10 +101,11 @@ void complex_valued_example( )
     grad_f_obj_at_x[ 1 ] = gamma*x[ 1 ];
   };
 
-  auto desc_dir = [ &grad_f_obj, &n ]( const vector< complex< double > >& x,
-                                       vector< complex< double > >& dx ) -> void
+  auto desc_dir = [ &n ]( const vector< complex< double > >& x,
+                          const vector< complex< double > >& grad_f_obj_at_x,
+                          vector< complex< double > >& dx ) -> void
   {
-    grad_f_obj( x, dx );
+    dx = grad_f_obj_at_x;
     cblas_zdscal( n, -1.0, dx.data( ), 1 );
   };
 
@@ -111,7 +113,7 @@ void complex_valued_example( )
   cout << "Starting point: ( " << x[ 0 ] << ", " << x[ 1 ] << " )" << endl;
   cout << "Initial objective function value: " << f_obj( x ) << endl;
 
-  ase::general_descent_method_with_btls( f_obj, grad_f_obj, desc_dir, x );
+  ase::cvx::general_descent_method_with_btls( f_obj, grad_f_obj, desc_dir, x );
 
   cout << "Ending point: ( " << x[ 0 ] << ", " << x[ 1 ] << " )" << endl;
   cout << "Ending objective function value: " << f_obj( x ) << endl;

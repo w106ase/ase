@@ -19,6 +19,8 @@
 
 namespace ase
 {
+namespace cvx
+{
   /*! \brief Backtracking line search (see \cite Boyd2004_ase Pg. 464) for determining a step-size, which minimizes a provided objective function that takes real-valued arguments.
 
       \param f_obj objective function which takes a single, real-valued argument <tt>x</tt>, and evaluates <tt>f_obj(x)</tt>.
@@ -73,7 +75,7 @@ namespace ase
   */
   void general_descent_method_with_btls( const std::function< double ( const std::vector< double >& x ) >& f_obj,
                                          const std::function< void ( const std::vector< double >& x, std::vector< double >& grad_f_obj_at_x ) >& grad_f_obj,
-                                         const std::function< void ( const std::vector< double >& x, std::vector< double >& dx ) >& desc_dir,
+                                         const std::function< void ( const std::vector< double >& x, const std::vector< double >& grad_f_obj_at_x, std::vector< double >& dx ) >& desc_dir,
                                          std::vector< double >& x, const bool& is_grad_desc = false, const int& max_iter = 100,
                                          const double& norm2_grad_thresh = pow( 10.0, -6.0 ), const double& alpha = 0.45,
                                          const double& beta = 0.8, const int& max_btls_iter = 100 );
@@ -95,9 +97,11 @@ namespace ase
   */
   void general_descent_method_with_btls( const std::function< double ( const std::vector< std::complex< double > >& x ) >& f_obj,
                                          const std::function< void ( const std::vector< std::complex< double > >& x, std::vector< std::complex< double > >& grad_f_obj_at_x ) >& grad_f_obj,
-                                         const std::function< void ( const std::vector< std::complex< double > >& x, std::vector< std::complex< double > >& dx ) >& desc_dir,
+                                         const std::function< void ( const std::vector< std::complex< double > >& x, const std::vector< std::complex< double > >& grad_f_obj_at_x, std::vector< std::complex< double > >& dx ) >& desc_dir,
                                          std::vector< std::complex< double > >& x, const bool& is_grad_desc = false,
                                          const int& max_iter = 100, const double& norm2_grad_thresh = pow( 10.0, -6.0 ),
                                          const double& alpha = 0.45, const double& beta = 0.8, const int& max_btls_iter = 100 );
-}
+
+} // cvx
+} // ase
 #endif // CVXOPT_H

@@ -82,7 +82,7 @@ void real_valued_example( )
     function value and taking a step.
     NOTE: dx is overwritten in the backtracking line search function call with
     step_size*dx, and x is overwritten with x+step_size*dx. */
-    double step_size = ase::backtracking_line_search( f_obj, x, grad_f_obj_at_x, dx );
+    double step_size = ase::cvx::backtracking_line_search( f_obj, x, grad_f_obj_at_x, dx );
     f_obj0 = f_obj( x );
 
     // Evaluate the new objective function value.
@@ -132,7 +132,7 @@ void complex_valued_example( )
     function value and taking a step.
     NOTE: dx is overwritten in the backtracking line search function call with
     step_size*dx, and x is overwritten with x+step_size*dx. */
-    double step_size = ase::backtracking_line_search( f_obj, x, grad_f_obj_at_x, dx );
+    double step_size = ase::cvx::backtracking_line_search( f_obj, x, grad_f_obj_at_x, dx );
     f_obj0 = f_obj( x );
 
     // Evaluate the new objective function value.

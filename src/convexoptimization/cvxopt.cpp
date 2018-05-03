@@ -21,6 +21,8 @@
 
 namespace ase
 {
+namespace cvx
+{
   double backtracking_line_search( const std::function< double ( const std::vector< double >& x ) >& f_obj,
                                    std::vector< double >& x, const std::vector< double >& grad_f_obj_at_x, std::vector< double >& dx,
                                    const double& alpha, const double& beta, const int& max_iter )
@@ -85,7 +87,7 @@ namespace ase
 
   void general_descent_method_with_btls( const std::function< double ( const std::vector< double >& x ) >& f_obj,
                                          const std::function< void ( const std::vector< double >& x, std::vector< double >& grad_f_obj_at_x ) >& grad_f_obj,
-                                         const std::function< void ( const std::vector< double >& x, std::vector< double >& dx ) >& desc_dir,
+                                         const std::function< void ( const std::vector< double >& x, const std::vector< double >& grad_f_obj_at_x, std::vector< double >& dx ) >& desc_dir,
                                          std::vector< double >& x, const bool& is_grad_desc, const int& max_iter, const double& norm2_grad_thresh,
                                          const double& alpha, const double& beta, const int& max_btls_iter )
   {
@@ -97,13 +99,7 @@ namespace ase
     {
       // Compute the gradient at the current point and a descent direction.
       grad_f_obj( x, grad_f_obj_at_x );
-      if( is_grad_desc )
-      {
-        dx = grad_f_obj_at_x;
-        cblas_dscal( n, -1.0, dx.data( ), 1 );
-      }
-      else
-        desc_dir( x, dx );
+      desc_dir( x, grad_f_obj_at_x, dx );
 
       // Check the stopping criterion.
       if( cblas_dnrm2( n, grad_f_obj_at_x.data( ), 1 ) < norm2_grad_thresh )
@@ -120,7 +116,7 @@ namespace ase
 
   void general_descent_method_with_btls( const std::function< double ( const std::vector< std::complex< double > >& x ) >& f_obj,
                                          const std::function< void ( const std::vector< std::complex< double > >& x, std::vector< std::complex< double > >& grad_f_obj_at_x ) >& grad_f_obj,
-                                         const std::function< void ( const std::vector< std::complex< double > >& x, std::vector< std::complex< double > >& dx ) >& desc_dir,
+                                         const std::function< void ( const std::vector< std::complex< double > >& x, const std::vector< std::complex< double > >& grad_f_obj_at_x, std::vector< std::complex< double > >& dx ) >& desc_dir,
                                          std::vector< std::complex< double > >& x, const bool& is_grad_desc, const int& max_iter,
                                          const double& norm2_grad_thresh, const double& alpha, const double& beta, const int& max_btls_iter )
   {
@@ -132,13 +128,7 @@ namespace ase
     {
       // Compute the gradient at the current point and a descent direction.
       grad_f_obj( x, grad_f_obj_at_x );
-      if( is_grad_desc )
-      {
-        dx = grad_f_obj_at_x;
-        cblas_zdscal( n, -1.0, dx.data( ), 1 );
-      }
-      else
-        desc_dir( x, dx );
+      desc_dir( x, grad_f_obj_at_x, dx );
 
       // Check the stopping criterion.
       if( cblas_dznrm2( n, grad_f_obj_at_x.data( ), 1 ) < norm2_grad_thresh )
@@ -152,4 +142,5 @@ namespace ase
       iter += 1;
     }
   }
-}
+} // cvx
+} // ase
