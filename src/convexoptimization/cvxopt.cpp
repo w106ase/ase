@@ -13,13 +13,15 @@
 
 #include <complex>
 #include <functional>
+#include <iostream>
+#include <limits>
 #include <vector>
 #include "convexoptimization/cvxopt.hpp"
 #include "mkl.h"
 
 namespace ase
 {
-  double backtracking_line_search( const std::function< double ( std::vector< double > x ) >& f_obj,
+  double backtracking_line_search( const std::function< double ( const std::vector< double >& x ) >& f_obj,
                                    std::vector< double >& x, const std::vector< double >& grad_f_obj_at_x, std::vector< double >& dx,
                                    const double& alpha, const double& beta, const int& max_iter )
   {
@@ -47,7 +49,7 @@ namespace ase
     return step_size;
   }
 
-  double backtracking_line_search( const std::function< double ( std::vector< std::complex< double > > x ) >& f_obj,
+  double backtracking_line_search( const std::function< double ( const std::vector< std::complex< double > >& x ) >& f_obj,
                                    std::vector< std::complex< double > >& x, const std::vector< std::complex< double > >& grad_f_obj_at_x,
                                    std::vector< std::complex< double > >& dx, const double& alpha, const double& beta, const int& max_iter )
   {
@@ -79,5 +81,75 @@ namespace ase
     }
     return step_size;
 
+  }
+
+  void general_descent_method_with_btls( const std::function< double ( const std::vector< double >& x ) >& f_obj,
+                                         const std::function< void ( const std::vector< double >& x, std::vector< double >& grad_f_obj_at_x ) >& grad_f_obj,
+                                         const std::function< void ( const std::vector< double >& x, std::vector< double >& dx ) >& desc_dir,
+                                         std::vector< double >& x, const bool& is_grad_desc, const int& max_iter, const double& norm2_grad_thresh,
+                                         const double& alpha, const double& beta, const int& max_btls_iter )
+  {
+    // Pre-allocations/-calculations.
+    int iter = 0, n = x.size( );
+    std::vector< double > grad_f_obj_at_x( n ), dx( n );
+
+    while( iter < max_iter )
+    {
+      // Compute the gradient at the current point and a descent direction.
+      grad_f_obj( x, grad_f_obj_at_x );
+      if( is_grad_desc )
+      {
+        dx = grad_f_obj_at_x;
+        cblas_dscal( n, -1.0, dx.data( ), 1 );
+      }
+      else
+        desc_dir( x, dx );
+
+      // Check the stopping criterion.
+      if( cblas_dnrm2( n, grad_f_obj_at_x.data( ), 1 ) < norm2_grad_thresh )
+        break;
+
+      /* Backtracking line search.
+      NOTE: x is overwritten in the function call with x+step_size*dx. */
+      backtracking_line_search( f_obj, x, grad_f_obj_at_x, dx, alpha, beta, max_btls_iter );
+
+      // Increment the counter.
+      iter += 1;
+    }
+  }
+
+  void general_descent_method_with_btls( const std::function< double ( const std::vector< std::complex< double > >& x ) >& f_obj,
+                                         const std::function< void ( const std::vector< std::complex< double > >& x, std::vector< std::complex< double > >& grad_f_obj_at_x ) >& grad_f_obj,
+                                         const std::function< void ( const std::vector< std::complex< double > >& x, std::vector< std::complex< double > >& dx ) >& desc_dir,
+                                         std::vector< std::complex< double > >& x, const bool& is_grad_desc, const int& max_iter,
+                                         const double& norm2_grad_thresh, const double& alpha, const double& beta, const int& max_btls_iter )
+  {
+    // Pre-allocations/-calculations.
+    int iter = 0, n = x.size( );
+    std::vector< std::complex< double > > grad_f_obj_at_x( n ), dx( n );
+
+    while( iter < max_iter )
+    {
+      // Compute the gradient at the current point and a descent direction.
+      grad_f_obj( x, grad_f_obj_at_x );
+      if( is_grad_desc )
+      {
+        dx = grad_f_obj_at_x;
+        cblas_zdscal( n, -1.0, dx.data( ), 1 );
+      }
+      else
+        desc_dir( x, dx );
+
+      // Check the stopping criterion.
+      if( cblas_dznrm2( n, grad_f_obj_at_x.data( ), 1 ) < norm2_grad_thresh )
+        break;
+
+      /* Backtracking line search.
+      NOTE: x is overwritten in the function call with x+step_size*dx. */
+      backtracking_line_search( f_obj, x, grad_f_obj_at_x, dx, alpha, beta, max_btls_iter );
+
+      // Increment the counter.
+      iter += 1;
+    }
   }
 }

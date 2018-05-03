@@ -50,7 +50,7 @@ void real_valued_example( )
   int n = 2;
   double gamma = 2.0;
   vector< double > x = { 10.0, 1.0 };
-  auto f_obj = [ &gamma ]( vector< double > x ) -> double
+  auto f_obj = [ &gamma ]( const vector< double >& x ) -> double
   {
     return 0.5*( pow( x[ 0 ], 2.0 )+gamma*pow( x[ 1 ], 2.0 ));
   };
@@ -100,7 +100,7 @@ void complex_valued_example( )
   int n = 2;
   double gamma = 2.0;
   vector< complex< double > > x = {{ 10.0, 10.0 }, { 1.0, 2.0 }};
-  auto f_obj = [ &gamma ]( vector< complex< double > > x ) -> double
+  auto f_obj = [ &gamma ]( const vector< complex< double > >& x ) -> double
   {
     return pow( abs( x[ 0 ]), 2.0 )+gamma*pow( abs( x[ 1 ]), 2.0 );
   };
