@@ -74,6 +74,7 @@ void real_valued_example( )
   // Apply the general descent method.
   cout << "Starting point: ( " << x[ 0 ] << ", " << x[ 1 ] << " )" << endl;
   cout << "Initial objective function value: " << f_obj( x ) << endl;
+  cout << endl;
 
   ase::cvx::general_descent_method_with_btls( f_obj, grad_f_obj, desc_dir, x );
 
@@ -112,6 +113,7 @@ void complex_valued_example( )
   // Apply the general descent method.
   cout << "Starting point: ( " << x[ 0 ] << ", " << x[ 1 ] << " )" << endl;
   cout << "Initial objective function value: " << f_obj( x ) << endl;
+  cout << endl;
 
   ase::cvx::general_descent_method_with_btls( f_obj, grad_f_obj, desc_dir, x );
 

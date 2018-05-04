@@ -101,7 +101,6 @@ namespace cvx
                                          std::vector< std::complex< double > >& x, const bool& is_grad_desc = false,
                                          const int& max_iter = 100, const double& norm2_grad_thresh = pow( 10.0, -6.0 ),
                                          const double& alpha = 0.45, const double& beta = 0.8, const int& max_btls_iter = 100 );
-
-} // cvx
-} // ase
+} // namespace cvx
+} // namespace ase
 #endif // CVXOPT_H

@@ -142,5 +142,5 @@ namespace cvx
       iter += 1;
     }
   }
-} // cvx
-} // ase
+} // namespace cvx
+} // namespace ase
