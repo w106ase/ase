@@ -1,6 +1,6 @@
 /*! \file testGeneralDescentMethod.cpp
     \brief Demonstrates the general descent method functions using both real-
-    and complex-valued data.
+    and complex-valued data (i.e., \f$ \min_{x \in R^{n}} f(x) \f$ and \f$ \min_{x \in C^{n}} f(x) \f$).
 
     Demonstrates the general descent method functions using real- and
     complex-valued data. For the demonstrations, the example problem 9.3.2 on
