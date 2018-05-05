@@ -21,7 +21,6 @@ set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build )
 # Check for MATLAB.
 set( Matlab_ROOT_DIR "/Applications/MATLAB_2017b.app" )
 find_package( Matlab REQUIRED MX_LIBRARY ENG_LIBRARY )
-message( STATUS ${Matlab_INCLUDE_DIRS} )
 include_directories( ${Matlab_INCLUDE_DIRS} )
 
 # Check for Intel MKL.
