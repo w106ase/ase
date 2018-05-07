@@ -3,12 +3,11 @@
     routines.
 
     Convex optimization functionality using Intel MKL functionality. This
-    functionality includes line search routines, gradient descent routines,
-    steepest descent routines, Newton's method routines, and various generic and
-    specialized solvers for convex optimization problems. Much of the provided
-    functionality is project driven with the application being radar signal
-    processing. Thus, where appropriate routines exist for handling both real-
-    and complex-valued inputs.
+    functionality includes line search routines, descent methods, and various
+    generic and specialized solvers for convex optimization problems. Much of
+    the provided functionality is project driven with the application being
+    radar signal processing. Thus, where appropriate routines exist for handling
+    both real- and complex-valued inputs.
 */
 
 #include <complex>
@@ -88,7 +87,7 @@ namespace cvx
   void general_descent_method_with_btls( const std::function< double ( const std::vector< double >& x ) >& f_obj,
                                          const std::function< void ( const std::vector< double >& x, std::vector< double >& grad_f_obj_at_x ) >& grad_f_obj,
                                          const std::function< void ( const std::vector< double >& x, const std::vector< double >& grad_f_obj_at_x, std::vector< double >& dx ) >& desc_dir,
-                                         std::vector< double >& x, const bool& is_grad_desc, const int& max_iter, const double& norm2_grad_thresh,
+                                         std::vector< double >& x, const int& max_iter, const double& norm2_grad_thresh,
                                          const double& alpha, const double& beta, const int& max_btls_iter )
   {
     // Pre-allocations/-calculations.
@@ -117,8 +116,7 @@ namespace cvx
   void general_descent_method_with_btls( const std::function< double ( const std::vector< std::complex< double > >& x ) >& f_obj,
                                          const std::function< void ( const std::vector< std::complex< double > >& x, std::vector< std::complex< double > >& grad_f_obj_at_x ) >& grad_f_obj,
                                          const std::function< void ( const std::vector< std::complex< double > >& x, const std::vector< std::complex< double > >& grad_f_obj_at_x, std::vector< std::complex< double > >& dx ) >& desc_dir,
-                                         std::vector< std::complex< double > >& x, const bool& is_grad_desc, const int& max_iter,
-                                         const double& norm2_grad_thresh, const double& alpha, const double& beta, const int& max_btls_iter )
+                                         std::vector< std::complex< double > >& x, const int& max_iter, const double& norm2_grad_thresh, const double& alpha, const double& beta, const int& max_btls_iter )
   {
     // Pre-allocations/-calculations.
     int iter = 0, n = x.size( );
@@ -141,6 +139,16 @@ namespace cvx
       // Increment the counter.
       iter += 1;
     }
+  }
+
+  void sdp_inequality_form_with_diag_plus_low_rank_lmi( )
+  {
+
+  }
+
+  void sdp_inequality_form_with_diag_plus_data_lmi( )
+  {
+
   }
 } // namespace cvx
 } // namespace ase
