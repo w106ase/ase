@@ -10,6 +10,11 @@
     both real- and complex-valued inputs.
 */
 
+#include <algorithm>
+#include <complex>
+#include <functional>
+#include <vector>
+
 namespace ase
 {
 namespace util

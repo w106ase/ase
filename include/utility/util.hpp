@@ -9,9 +9,7 @@
 
 #ifndef UTIL_H
 #define UTIL_H
-#include <algorithm>
 #include <complex>
-#include <functional>
 #include <vector>
 
 namespace ase
