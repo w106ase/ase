@@ -30,12 +30,16 @@ include_directories( ${MKL_INCLUDE_DIR} )
 # Gather all header files (for making a library).
 set( HDR "${CMAKE_SOURCE_DIR}/include" )
 file( GLOB HDR_CVXOPT "${HDR}/convexoptimization/*.*pp" )
-set( ASE_HDR ${HDR_CVXOPT} )
+file( GLOB HDR_UTIL "${HDR}/utility/*.*pp" )
+file( GLOB HDR_LINALG "${HDR}/linearalgebra/*.*pp" )
+set( ASE_HDR ${HDR_CVXOPT} ${HDR_UTIL} ${HDR_LINALG} )
 
 # Gather all source files (for making a library).
 set( SRC "${CMAKE_SOURCE_DIR}/src" )
 file( GLOB SRC_CVXOPT "${SRC}/convexoptimization/*.cpp" )
-set( ASE_SRC ${SRC_CVXOPT} )
+file( GLOB SRC_UTIL "${SRC}/utility/*.cpp" )
+file( GLOB SRC_LINALG "${SRC}/linearalgebra/*cpp" )
+set( ASE_SRC ${SRC_CVXOPT} ${SRC_UTIL} ${SRC_LINALG} )
 
 # Build a library from the header and implementation files.
 add_library( ase ${ASE_HDR} ${ASE_SRC} )
