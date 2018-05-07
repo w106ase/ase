@@ -26,7 +26,7 @@ namespace linalg
       \param alpha scalar out front of the matrix product.
       \param multiply_diag_on_lhs flag that is true when computing \f$ \alpha \mathrm{Diag}(x) A \f$ (when false it computes \f$ \alpha A \mathrm{Diag}(x) + B\f$)
   */
-  void diag_matrix_product( std::vector< double >& x,
+  void diag_matrix_product( const std::vector< double >& x,
                             const std::vector< double >& A,
                             std::vector< double >& B,
                             const double& alpha = 1.0,
@@ -40,7 +40,7 @@ namespace linalg
       \param alpha scalar out front of the matrix product.
       \param multiply_diag_on_lhs flag that is true when computing \f$ \alpha \mathrm{Diag}(x) A \f$ (when false it computes \f$ \alpha A \mathrm{Diag}(x) + B\f$)
   */
-  void diag_matrix_product( std::vector< std::complex< double > >& x,
+  void diag_matrix_product( const std::vector< std::complex< double > >& x,
                             const std::vector< std::complex< double > >& A,
                             std::vector< std::complex< double > >& B,
                             const std::complex< double >& alpha = 1.0,
