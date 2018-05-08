@@ -4,7 +4,7 @@
     Basic linear algebra routines implemented using Intel MKL functionality.
     This functionality includes diagonal matrix product with a general matrix,
     various decompositions, and various methods for computing inverses
-    efficiently.  Much of the provided functionality is project driven with the
+    efficiently. Much of the provided functionality is project driven with the
     application being radar signal processing. Thus, where appropriate routines
     exist for handling both real- and complex-valued inputs.
 */
