@@ -31,8 +31,9 @@ namespace cvx
       \param max_iter maximum number of iterations to apply the backtracking line search.
 
       \return step-size for scaling the descent direction.
-      \note the descent direction, <tt>dx</tt>, is overwritten by <tt>step_size*dx</tt> in the function call, and
+      \note The descent direction, <tt>dx</tt>, is overwritten by <tt>step_size*dx</tt> in the function call, and
       <tt>x</tt> is overwriten by <tt>x+step_size*dx</tt>.
+      \note If the maximum number of iterations is reached, the step-size is set to zero to prevent stepping to an infeasible point.
   */
   double backtracking_line_search( const std::function< double ( const std::vector< double >& x ) >& f_obj,
                                    std::vector< double >& x, const std::vector< double >& grad_f_obj_at_x, std::vector< double >& dx,
@@ -49,8 +50,9 @@ namespace cvx
       \param max_iter maximum number of iterations to apply the backtracking line search.
 
       \return step-size for scaling the descent direction.
-      \note the descent direction, <tt>dx</tt>, is overwritten by <tt>step_size*dx</tt> in the function call, and
+      \note The descent direction, <tt>dx</tt>, is overwritten by <tt>step_size*dx</tt> in the function call, and
       <tt>x</tt> is overwriten by <tt>x+step_size*dx</tt>.
+      \note If the maximum number of iterations is reached, the step-size is set to zero to prevent stepping to an infeasible point.
   */
   double backtracking_line_search( const std::function< double ( const std::vector< std::complex< double > >& x ) >& f_obj,
                                    std::vector< std::complex< double > >& x, const std::vector< std::complex< double > >& grad_f_obj_at_x,
@@ -69,9 +71,13 @@ namespace cvx
       \param beta backtracking line search parameter (see \cite Boyd2004_ase Pg. 464).
       \param max_btls_iter maximum number of iterations to apply the backtracking line search.
 
-      \note the initial point, <tt>x</tt>, is overwritten by <tt>x+step_size*dx</tt> in the function call.
+      \return flag indicating the general descent method terminated early as a
+      result of a backtracking line search step-size of zero. This may indicate
+      different backtracking line search parameters are needed.
+
+      \note The initial point, <tt>x</tt>, is overwritten by <tt>x+step_size*dx</tt> in the function call.
   */
-  void general_descent_method_with_btls( const std::function< double ( const std::vector< double >& x ) >& f_obj,
+  bool general_descent_method_with_btls( const std::function< double ( const std::vector< double >& x ) >& f_obj,
                                          const std::function< void ( const std::vector< double >& x, std::vector< double >& grad_f_obj_at_x ) >& grad_f_obj,
                                          const std::function< void ( const std::vector< double >& x, const std::vector< double >& grad_f_obj_at_x, std::vector< double >& dx ) >& desc_dir,
                                          std::vector< double >& x, const int& max_iter = 100, const double& norm2_grad_thresh = pow( 10.0, -6.0 ), const double& alpha = 0.45,
@@ -89,18 +95,52 @@ namespace cvx
       \param beta backtracking line search parameter (see \cite Boyd2004_ase Pg. 464).
       \param max_btls_iter maximum number of iterations to apply the backtracking line search.
 
-      \note the initial point, <tt>x</tt>, is overwritten by <tt>x+step_size*dx</tt> in the function call.
+      \return flag indicating the general descent method terminated early as a
+      result of a backtracking line search step-size of zero. This may indicate
+      different backtracking line search parameters are needed.
+
+      \note The initial point, <tt>x</tt>, is overwritten by <tt>x+step_size*dx</tt> in the function call.
   */
-  void general_descent_method_with_btls( const std::function< double ( const std::vector< std::complex< double > >& x ) >& f_obj,
+  bool general_descent_method_with_btls( const std::function< double ( const std::vector< std::complex< double > >& x ) >& f_obj,
                                          const std::function< void ( const std::vector< std::complex< double > >& x, std::vector< std::complex< double > >& grad_f_obj_at_x ) >& grad_f_obj,
                                          const std::function< void ( const std::vector< std::complex< double > >& x, const std::vector< std::complex< double > >& grad_f_obj_at_x, std::vector< std::complex< double > >& dx ) >& desc_dir,
                                          std::vector< std::complex< double > >& x, const int& max_iter = 100, const double& norm2_grad_thresh = pow( 10.0, -6.0 ),
                                          const double& alpha = 0.45, const double& beta = 0.8, const int& max_btls_iter = 100 );
 
+  /*! \brief General barrier method (see \cite Boyd2004_ase Pg. 569) for an objective function taking a real-valued argument.
+
+      \param f_center function for carrying out the centering step (see \cite Boyd2004_ase Pg. 569).
+      \param x starting point to begin the barrier method from.
+      \param barrier_parameter weighting for the original objective function (see \f$t\f$ on Pg. 569 of \cite Boyd2004_ase).
+      \param barrier_parameter_update update factor for the barrier parameter (see \f$\mu\f$ on Pg. 569 of \cite Boyd2004_ase).
+      \param max_iter maximum number of iterations to apply the general barrier method.
+      \param sub_optimality_thresh sub-optimality threshold for stopping the general barrier method.
+
+      \return flag indicating the general descent method terminated early as a
+      result of a backtracking line search step-size of zero. This may indicate
+      different backtracking line search parameters are needed.
+
+      \note The initial point, <tt>x</tt>, is overwritten in the function call.
+  */
+  void general_barrier_method( const std::function< bool ( std::vector< double >& x, const double& barrier_parameter ) >& f_center,
+                               std::vector< double >& x, const double& barrier_parameter0 = 1.0, const double& barrier_parameter_update = 10.0,
+                               const int& max_iter = 50, const double& sub_optimality_thresh = pow( 10.0, -6.0 ));
+
+  /*! \brief Logarithmic barrier function \f$-\sum_{i=0}^{n-1} \mathrm{ln}\left( -[x]_{i}\right)\f$ (see \cite Boyd2004_ase Pg. 563).
+
+      \param x the input vector to calculate the logarithmic barrier function for.
+      \param negate_x flag which is true when computing \f$-\sum_{i=0}^{n-1} \mathrm{ln}\left( -[-x]_{i} )\right)\f$
+
+      \return logarithmic barrier function value (i.e., \f$-\sum_{i=0}^{n-1} \left[ x\right]_{i}\f$ or \f$-\sum_{i=0}^{n-1} \mathrm{ln}\left(-\left[ x\right]_{i}\right)\f$).
+
+      \note The flag <tt>negate_x</tt> should be set so that \f$-x \succ 0\f$.
+  */
+  double log_barrier( const std::vector< double >& x, const bool& negate_x = false );
+
   // void max_phase_cut_dual_barrier // General max phase cut
   // void max_phase_cut_dual_barrier_with_low_rank_data
 
-  /*! \brief Inequality form SDP (see \cite Boyd2004_ase Pg. 169) solver with a diagonal plus low-rank data linear matrix inequality (LMI)
+  /*! \brief Inequality form SDP (see \cite Boyd2004_ase Pg. 169) interior point method, with a diagonal plus low-rank data linear matrix inequality (LMI)
       \f{eqnarray*}{
         \min_{x \in R^{n}} &c^{\mathrm{T}} x& \\
         \textrm{subject to} &\mathrm{Diag}(x)+ZZ^{\mathrm{H}} \preceq 0,&
@@ -110,7 +150,7 @@ namespace cvx
   */
   void sdp_inequality_form_with_diag_plus_low_rank_lmi( );
 
-  /*! \brief Inequality form SDP (see \cite Boyd2004_ase Pg. 169) solver with a diagonal plus data linear matrix inequality (LMI)
+  /*! \brief Inequality form SDP (see \cite Boyd2004_ase Pg. 169) interior point method, with a diagonal plus data linear matrix inequality (LMI)
   \f{eqnarray*}{
     \min_{x \in R^{n}} &c^{\mathrm{T}} x& \\
     \textrm{subject to} &\mathrm{Diag}(x)+ZZ^{\mathrm{H}} \preceq 0,&
