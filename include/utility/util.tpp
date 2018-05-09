@@ -1,13 +1,10 @@
-/*! \file cvxopt.cpp
-    \brief Convex optimization functionality implemented using Intel MKL
-    routines.
+/*! \file util.tpp
+    \brief Utility routines used for data wrangling, testing, and verification.
 
-    Convex optimization functionality using Intel MKL functionality. This
-    functionality includes line search routines, descent methods, and various
-    generic and specialized solvers for convex optimization problems. Much of
-    the provided functionality is project driven with the application being
-    radar signal processing. Thus, where appropriate routines exist for handling
-    both real- and complex-valued inputs.
+    Utility routines used for data wrangling, testing, and verification. For
+    example, this header contains functions for computing the real/imaginary
+    part of a complex-valued vector, as well as various routines for using
+    MATLAB engine within C++ for testing, verifying, and visualizing results.
 */
 
 #include <algorithm>
