@@ -26,13 +26,15 @@ include_directories( ${Matlab_INCLUDE_DIRS} )
 # Check for Intel MKL.
 find_package( MKL REQUIRED )
 include_directories( ${MKL_INCLUDE_DIR} )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMKL_ILP64 -m64" ) # Links recommended by Intel MKL link advisor
 
 # Gather all header files (for making a library).
 set( HDR "${CMAKE_SOURCE_DIR}/include" )
+file( GLOB HDR_CONSTANTS "${HDR}/constants/*.*pp" )
 file( GLOB HDR_CVXOPT "${HDR}/convexoptimization/*.*pp" )
 file( GLOB HDR_UTIL "${HDR}/utility/*.*pp" )
 file( GLOB HDR_LINALG "${HDR}/linearalgebra/*.*pp" )
-set( ASE_HDR ${HDR_CVXOPT} ${HDR_UTIL} ${HDR_LINALG} )
+set( ASE_HDR ${HDR_CONSTANTS} ${HDR_CVXOPT} ${HDR_UTIL} ${HDR_LINALG} )
 
 # Gather all source files (for making a library).
 set( SRC "${CMAKE_SOURCE_DIR}/src" )
