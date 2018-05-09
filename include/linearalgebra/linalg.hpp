@@ -4,7 +4,7 @@
     Basic linear algebra routines implemented using Intel MKL functionality.
     This functionality includes diagonal matrix product with a general matrix,
     various decompositions, and various methods for computing inverses
-    efficiently.  Much of the provided functionality is project driven with the
+    efficiently. Much of the provided functionality is project driven with the
     application being radar signal processing. Thus, where appropriate routines
     exist for handling both real- and complex-valued inputs.
 */
@@ -45,6 +45,46 @@ namespace linalg
                             std::vector< std::complex< double > >& B,
                             const std::complex< double >& alpha = 1.0,
                             const bool& multiply_diag_on_lhs = true );
+
+  /*! \brief Compute the sum of a matrix plus a diagonal plus low-rank term (i.e., \f$B+\alpha \mathrm{Diag}(x)+\beta A A^{\mathrm{T}}\f$ or \f$B+\alpha \mathrm{Diag}(x)+\beta A^{\mathrm{T}} A\f$).
+
+      \param x diagonal elements forming the diagonal matrix.
+      \param A low-rank term.
+      \param B matrix to be added to the diagonal plus low-rank result.
+      \param transpose_A flag which is true when computing the low-rank term as \f$ A^{\mathrm{T}} A\f$.
+      \param alpha scaling for the diagonal term.
+      \param beta scaling for the low-rank term.
+
+      \note Because <tt>B</tt> is added to the diagonal plus low-rank result,
+      the user should ensure <tt>B</tt> contains all zeros when looking for
+      assignment (i.e., to compute i.e., \f$B = \alpha \mathrm{Diag}(x)+\beta A
+      A^{\mathrm{T}}\f$ or \f$B = \alpha \mathrm{Diag}(x)+\beta A^{\mathrm{T}}
+      A\f$).
+  */
+  void diag_plus_low_rank( const std::vector< double >& x, const std::vector< double >& A,
+                           std::vector< double >& B, const bool& conj_transpose_A = false,
+                           const double& alpha = 1.0, const double& beta = 1.0 );
+
+  /*! \brief Compute the sum of a matrix plus a diagonal plus low-rank term (i.e., \f$B+\alpha \mathrm{Diag}(x)+\beta A A^{\mathrm{H}}\f$ or \f$B+\alpha \mathrm{Diag}(x)+\beta A^{\mathrm{H}} A\f$).
+
+      \param x diagonal elements forming the diagonal matrix.
+      \param A low-rank term.
+      \param B matrix to be added to the diagonal plus low-rank result.
+      \param conj_transpose_A flag which is true when computing the low-rank term as \f$ A^{\mathrm{H}} A\f$.
+      \param alpha scaling for the diagonal term.
+      \param beta scaling for the low-rank term.
+
+      \note Because <tt>B</tt> is added to the diagonal plus low-rank result,
+      the user should ensure <tt>B</tt> contains all zeros when looking for
+      assignment (i.e., to compute i.e., \f$B = \alpha \mathrm{Diag}(x)+\beta A
+      A^{\mathrm{H}}\f$ or \f$B = \alpha \mathrm{Diag}(x)+\beta A^{\mathrm{H}}
+      A\f$).
+  */
+  void diag_plus_low_rank( const std::vector< std::complex< double > >& x,
+                           const std::vector< std::complex< double > >& A,
+                           std::vector< std::complex< double > >& B,
+                           const bool& conj_transpose_A = false,
+                           const double& alpha = 1.0, const double& beta = 1.0 );
 } // namespace linalg
 } // namespace ase
 #endif

@@ -13,6 +13,7 @@
 #include <iostream>
 #include <numeric>
 #include <vector>
+#include "constants/constants.hpp"
 #include "mkl.h"
 
 namespace ase
@@ -59,6 +60,66 @@ namespace linalg
       for( int i = 0; i < n_cols; i++ )
         cblas_zaxpy( n_rows, &x[ i ], &A[ i*n_rows ], 1, &B[ i*n_rows ], 1 );
     }
+  }
+
+  void diag_plus_low_rank( const std::vector< double >& x, const std::vector< double >& A,
+                           std::vector< double >& B, const bool& transpose_A,
+                           const double& alpha, const double& beta )
+  {
+    int n = x.size( );
+    int p = A.size( )/n;
+
+    // Add the low-rank term to B.
+    CBLAS_TRANSPOSE trans;
+    int lda;
+    if( transpose_A )
+    {
+      trans = CblasTrans;
+      lda = p;
+    }
+    else
+    {
+      trans = CblasNoTrans;
+      lda = n;
+    }
+    cblas_dsyrk( ase::constants::layout, ase::constants::uplo, trans, n, p,
+                 beta, A.data( ), lda, 1.0, B.data( ), n );
+                 
+    // Add the diagonal components to B.
+    for( int i = 0; i < n; i++ )
+      B[ i+i*n ] = alpha*x[ i ];
+  }
+
+  void diag_plus_low_rank( const std::vector< std::complex< double > >& x,
+                           const std::vector< std::complex< double > >& A,
+                           std::vector< std::complex< double > >& B,
+                           const bool& conj_transpose_A, const double& alpha,
+                           const double& beta )
+  {
+    int n = x.size( );
+    int p = A.size( )/n;
+
+    // Add the low-rank term to B.
+    CBLAS_TRANSPOSE trans;
+    int lda;
+    if( conj_transpose_A )
+    {
+      trans = CblasConjTrans;
+      lda = p;
+    }
+    else
+    {
+      trans = CblasNoTrans;
+      lda = n;
+    }
+    /* It appears Intel MKL cblas_zherk forces the diagonals to be real. Thus,
+    the diagonal update must come after this function call. */
+    cblas_zherk( ase::constants::layout, ase::constants::uplo, trans, n, p,
+                 beta, A.data( ), lda, 1.0, B.data( ), n );
+
+    // Add the diagonal components to B.
+    for( int i = 0; i < n; i++ )
+      B[ i+i*n ] += alpha*x[ i ];
   }
 } // namespace linalg
 } // namespace ase
