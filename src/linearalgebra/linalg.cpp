@@ -20,6 +20,44 @@ namespace ase
 {
 namespace linalg
 {
+  double determinant( const std::vector< double >& X, const double n )
+  {
+    std::vector< double > X_copy = X;
+    std::vector< lapack_int > piv_idx( n );
+    LAPACKE_dgetrf( ase::constants::layout, n, n, X_copy.data( ), n, piv_idx.data( ));
+    double det = 1.0;
+    for( int i = 0; i < n; i++ )
+    {
+      det *= X_copy[ i+n*i ];
+
+      if(( i+1 ) != piv_idx[ i ]) // Row exchange
+        det *= -1.0;
+
+      if( det == 0.0 )
+        break;
+    }
+    return det;
+  }
+
+  std::complex< double > determinant( const std::vector< std::complex< double > >& X, const double n )
+  {
+    std::vector< std::complex< double > > X_copy = X;
+    std::vector< lapack_int > piv_idx( n );
+    LAPACKE_zgetrf( ase::constants::layout, n, n, X_copy.data( ), n, piv_idx.data( ));
+    std::complex< double > det = { 1.0, 0.0 };
+    for( int i = 0; i < n; i++ )
+    {
+      det *= X_copy[ i+n*i ];
+
+      if(( i+1 ) != piv_idx[ i ]) // Row exchange
+        det *= -1.0;
+
+      if( det == 0.0 )
+        break;
+    }
+    return det;
+  }
+
   void diag_matrix_product( const std::vector< double >& x,
                             const std::vector< double >& A,
                             std::vector< double >& B,
@@ -84,7 +122,7 @@ namespace linalg
     }
     cblas_dsyrk( ase::constants::layout, ase::constants::uplo, trans, n, p,
                  beta, A.data( ), lda, 1.0, B.data( ), n );
-                 
+
     // Add the diagonal components to B.
     for( int i = 0; i < n; i++ )
       B[ i+i*n ] = alpha*x[ i ];

@@ -1,11 +1,9 @@
 #TO DO:
 
 ## Coding
-1. Implement a generalized log barrier funtion. We will need two separate
-functions: 1) takes the matrix as the argument and computes the determinant
-using a brute-force approach (will have a flag for negating but otherwise the
-matrix should be positive definite) and 2) takes the matrix as the argument as
-well as a function which computes the determinant efficiently.
+1. Implement a generalized log barrier funtion. One of the arguments to the
+function will be a function for computing the determinant of a matrix. By
+default this argument will use our brute force determinant function.
 1. Generate a test for the log and generalized log barrier functions.
 1. Implement a general barrier method function for complex-valued inputs.
 1. Finish documenting and implementing the barrier method function test (need to

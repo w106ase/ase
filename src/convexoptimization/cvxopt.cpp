@@ -215,7 +215,7 @@ namespace cvx
   double log_barrier( const std::vector< double >& x, const bool& negate_x )
   {
     if( std::all_of( x.begin( ), x.end( ),
-        [ &negate_x ]( double x ){ return ( negate_x ) ? ( x < 0.0 ) : ( x > 0.0 );}))
+        [ &negate_x ]( double x ){ return ( negate_x ) ? ( x < 0.0 ) : ( x > 0.0 ); }))
     {
       // Pre-allocations/-calculations.
       int n = x.size( );
