@@ -111,7 +111,7 @@ namespace cvx
 
       \param f_center function for carrying out the centering step (see \cite Boyd2004_ase Pg. 569).
       \param x starting point to begin the barrier method from.
-      \param barrier_parameter weighting for the original objective function (see \f$t\f$ on Pg. 569 of \cite Boyd2004_ase).
+      \param barrier_parameter0 weighting for the original objective function (see \f$t\f$ on Pg. 569 of \cite Boyd2004_ase).
       \param barrier_parameter_update update factor for the barrier parameter (see \f$\mu\f$ on Pg. 569 of \cite Boyd2004_ase).
       \param max_iter maximum number of iterations to apply the general barrier method.
       \param sub_optimality_thresh sub-optimality threshold for stopping the general barrier method.
@@ -143,22 +143,50 @@ namespace cvx
   /*! \brief Inequality form SDP (see \cite Boyd2004_ase Pg. 169) interior point method, with a diagonal plus low-rank data linear matrix inequality (LMI)
       \f{eqnarray*}{
         \min_{x \in R^{n}} &c^{\mathrm{T}} x& \\
-        \textrm{subject to} &\mathrm{Diag}(x)+ZZ^{\mathrm{H}} \preceq 0,&
+        \textrm{subject to} &\mathrm{Diag}(x)+ZZ^{\mathrm{T}} \preceq 0,&
       \f}
-      where \f$ c \in R^{n} \f$ and \f$ Z \in C^{n \times p} \f$ are input data.
+      where \f$ c \in R^{n} \f$ and \f$ Z \in R^{n \times p} \f$ are input data.
 
+      \note The input data matrix <tt>Z</tt> does not have a const because the
+      data is scaled. However, before a solution is returned the data matrix is
+      scaled back to its original value. Thus, even though there is no const
+      with <tt>Z</tt> the value is not changed.
   */
-  void sdp_inequality_form_with_diag_plus_low_rank_lmi( );
+  void sdp_inequality_form_with_diag_plus_low_rank_lmi( std::vector< double >&x,
+                                                        const std::vector< double >& c,
+                                                        std::vector< double >& Z );
 
-  /*! \brief Inequality form SDP (see \cite Boyd2004_ase Pg. 169) interior point method, with a diagonal plus data linear matrix inequality (LMI)
-  \f{eqnarray*}{
-    \min_{x \in R^{n}} &c^{\mathrm{T}} x& \\
-    \textrm{subject to} &\mathrm{Diag}(x)+ZZ^{\mathrm{H}} \preceq 0,&
-  \f}
-  where \f$ c \in R^{n} \f$ and \f$ Z \in C^{n \times p} \f$ are input data.
-
-  */
-  void sdp_inequality_form_with_diag_plus_data_lmi( );
+  // /*! \brief Inequality form SDP (see \cite Boyd2004_ase Pg. 169) interior point method, with a diagonal plus low-rank data linear matrix inequality (LMI)
+  //     \f{eqnarray*}{
+  //       \min_{x \in R^{n}} &c^{\mathrm{T}} x& \\
+  //       \textrm{subject to} &\mathrm{Diag}(x)+ZZ^{\mathrm{H}} \preceq 0,&
+  //     \f}
+  //     where \f$ c \in R^{n} \f$ and \f$ Z \in C^{n \times p} \f$ are input data.
+  //
+  // */
+  // void sdp_inequality_form_with_diag_plus_low_rank_lmi( std::vector< double >&x,
+  //                                                       const std::vector< double >& c,
+  //                                                       std::vector< std::complex< double > >& Z );
+  //
+  // /*! \brief Inequality form SDP (see \cite Boyd2004_ase Pg. 169) interior point method, with a diagonal plus data linear matrix inequality (LMI)
+  // \f{eqnarray*}{
+  //   \min_{x \in R^{n}} &c^{\mathrm{T}} x& \\
+  //   \textrm{subject to} &\mathrm{Diag}(x)+Z \preceq 0,&
+  // \f}
+  // where \f$ c \in R^{n} \f$ and \f$ Z \in R^{n \times n} \f$ are input data.
+  //
+  // */
+  // void sdp_inequality_form_with_diag_plus_data_lmi( );
+  //
+  // /*! \brief Inequality form SDP (see \cite Boyd2004_ase Pg. 169) interior point method, with a diagonal plus data linear matrix inequality (LMI)
+  // \f{eqnarray*}{
+  //   \min_{x \in R^{n}} &c^{\mathrm{T}} x& \\
+  //   \textrm{subject to} &\mathrm{Diag}(x)+Z \preceq 0,&
+  // \f}
+  // where \f$ c \in R^{n} \f$ and \f$ Z \in C^{n \times n} \f$ are input data.
+  //
+  // */
+  // void sdp_inequality_form_with_diag_plus_data_lmi( );
 } // namespace cvx
 } // namespace ase
 #endif // CVXOPT_H

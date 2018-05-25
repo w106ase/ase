@@ -16,6 +16,8 @@
 #include <iostream>
 #include <limits>
 #include <vector>
+#include "constants/constants.hpp"
+#include "linearalgebra/linalg.hpp"
 #include "convexoptimization/cvxopt.hpp"
 #include "mkl.h"
 
@@ -215,21 +217,21 @@ namespace cvx
   double log_barrier( const std::vector< double >& x, const bool& negate_x )
   {
     if( std::all_of( x.begin( ), x.end( ),
-        [ &negate_x ]( double x ){ return ( negate_x ) ? ( x < 0.0 ) : ( x > 0.0 ); }))
+        [ &negate_x ]( const double& x ){ return ( negate_x ) ? ( x > 0.0 ) : ( x < 0.0 ); }))
     {
       // Pre-allocations/-calculations.
       int n = x.size( );
       std::vector< double > ln_x( n );
 
       // Negate x if needed and compute the natural logarithm.
-      if( negate_x )
+      if( negate_x ) // Compute ln( -[-x])
+        vdLn( n, x.data( ), ln_x.data( ));
+      else // Compute ln( -x )
       {
         std::vector< double > x_copy = x;
         cblas_dscal( n, -1.0, x_copy.data( ), 1 );
         vdLn( n, x_copy.data( ), ln_x.data( ));
       }
-      else
-        vdLn( n, x.data( ), ln_x.data( ));
 
       // Compute the negative of the sum of the natural logarithm.
       std::vector< double > ones( n, 1.0 );
@@ -239,5 +241,235 @@ namespace cvx
       return std::numeric_limits< double >::infinity( );
   }
 
+  void sdp_inequality_form_with_diag_plus_low_rank_lmi( std::vector< double >&x,
+                                                        const std::vector< double >& c,
+                                                        std::vector< double >& Z )
+  {
+    // Input dimension.
+    int n = x.size( ), p = Z.size( )/n, n2 = n*n, p2 = p*p, np = n*p, np2 = n*p2, p4 = p2*p2;
+    double neg_log_det_C;
+    bool use_alt_newton_step = p2 < 0.2*n;
+    std::vector< double > V( p*p ), w( p ), lmi_inv( n2 ), hess( n2 ), S( np );
+
+    // Initialize a strictly feasible point x.
+    double Z_fro_norm = LAPACKE_dlange( ase::constants::layout, 'F', n, p, Z.data( ), n );
+    cblas_dscal( np, 1.0/Z_fro_norm, Z.data( ), 1 );
+    x.assign( n, -( 1.0+pow( 10.0, -6.0 )));
+
+    /* Define a lambda for computing the eigendecomposition of
+    C = eye( p )+Z^{T} Diag^{-1}(x) Z, so that V := V Diag^{-1/2}(w) where w
+    contains the eigenvalues of C and V are the eigenvectors of C. */
+    auto f_C = [ &n, &p ]( const std::vector< double >& x,
+                           const std::vector< double >& Z,
+                           std::vector< double >& V,
+                           double& neg_log_det_C ) -> double
+    {
+      // Initialize C with the identity matrix.
+      double p2 = p*p;
+      std::vector< double > C( p2 );
+      for( int i = 0; i < p; i++ )
+        C[ i+i*p ] = 1.0;
+
+      // Add the term Z^{T} Diag^{-1}(x) Z.
+      for( int i = 0; i < n; i++ )
+        cblas_dsyr( ase::constants::layout, ase::constants::uplo,
+                    p, 1.0/x[ i ], &Z[ i ], n, C.data( ), p );
+
+      // Compute eigendecomposition of C = V W V^{T}.
+      std::vector< double > w( p );
+      MKL_INT m;
+      std::vector< MKL_INT > isuppz( 2*p );
+      LAPACKE_dsyevr( ase::constants::layout, 'V', 'A', ase::constants::uplo_char,
+                      p, C.data( ), p, 0.0, 0.0, 0.0, 0.0, LAPACKE_dlamch( 'S' ),
+                      &m, w.data( ), V.data( ), p, isuppz.data( ));
+
+      // Compute V := V Diag^{-1/2}(w)
+      std::vector< double > w_inv_sqrt( p );
+      vdInvSqrt( p, w.data( ), w_inv_sqrt.data( ));
+      C.assign( p2, 0.0 );
+      ase::linalg::diag_matrix_product( w_inv_sqrt, V, C, 1.0, false );
+      V = C;
+
+      // Compute the negative logarithm of the determinant of C.
+      neg_log_det_C = 0.0;
+      for( int i = 0; i < p; i++ )
+      {
+        if( w[ i ] > 0.0 )
+          neg_log_det_C -= log( w[ i ]);
+        else
+        {
+          neg_log_det_C = std::numeric_limits< double >::infinity( );
+          break;
+        }
+      }
+      return neg_log_det_C;
+    };
+
+    // Define a lambda for the f_center function.
+    auto f_center = [ &c, &Z, &f_C, &V, &neg_log_det_C, &S, &use_alt_newton_step,
+                      &lmi_inv, &hess, &n, &p, &np, &n2, &p2, &np2, &p4 ]( std::vector< double >& x,
+                                                                           const double& barrier_parameter ) -> bool
+    {
+      // Compute the eigendecomposition of C = eye( p )+Z^{T} Diag^{-1}(x) Z.
+      f_C( x, Z, V, neg_log_det_C );
+      bool call_f_C;
+
+      // Define a lambda for the gradient of the barrier objective function.
+      auto grad_f_barrier_obj = [ &c, &Z, &barrier_parameter, &V, &call_f_C, &S,
+                                  &lmi_inv, &n, &p, &np ]( const std::vector< double >& x,
+                                                           std::vector< double >& grad_f_barrier_obj_at_x ) -> void
+      {
+        // Compute S = Diag^{-1}(x) Z V, where V := V Diag^{-1/2}(w).
+        std::vector< double > x_inv( n ), diag_x_inv_Z( np );
+        vdInv( n, x.data( ), x_inv.data( ));
+        ase::linalg::diag_matrix_product( x_inv, Z, diag_x_inv_Z );
+        cblas_dgemm( ase::constants::layout, CblasNoTrans, CblasNoTrans, n, p, p,
+                     1.0, diag_x_inv_Z.data( ), n, V.data( ), p, 0.0, S.data( ), n );
+
+        // Compute lmi_inv = -S S^{T}.
+        cblas_dsyrk( ase::constants::layout, ase::constants::uplo, CblasNoTrans,
+                     n, p, -1.0, S.data( ), n, 0.0, lmi_inv.data( ), n );
+
+        // Add Diag^{-1}(x) to the lmi_inv result and assign the gradient.
+        for( int i = 0; i < n; i++ )
+        {
+          lmi_inv[ i+i*n ] += x_inv[ i ];
+          grad_f_barrier_obj_at_x[ i ] = barrier_parameter*c[ i ]-lmi_inv[ i+i*n ];
+        }
+
+        // Set the call flag.
+        call_f_C = false;
+      };
+
+      // Define a lambda for the barrier descent direction function.
+      std::function< void( const std::vector< double >& x,
+                           const std::vector< double >& grad_f_barrier_obj_at_x,
+                           std::vector< double >& dx )> barrier_desc_dir;
+      if( use_alt_newton_step )
+      {
+        barrier_desc_dir = [ &lmi_inv, &hess, &n ]( const std::vector< double >& x,
+                                                    const std::vector< double >& grad_f_barrier_obj_at_x,
+                                                    std::vector< double >& dx ) -> void
+        {
+          /* Compute the Hessian (abs2 of each element -- F_inv is Hermitian so only
+          assign the upper triangular part). Negate the Hessian instead of the gradient. */
+          for( int i = 0; i < n; i++ )
+            for( int j = 0; j < i+1; j++ )
+              hess[ i*n+j ] = pow( abs( lmi_inv[ i*n+j ]), 2.0 );
+
+          // Compute the descent direction.
+          dx = grad_f_barrier_obj_at_x;
+          cblas_dscal( n, -1.0, dx.data( ), 1 );
+          LAPACKE_dposv( ase::constants::layout, ase::constants::uplo_char, n, 1,
+                         hess.data( ), n, dx.data( ), n );
+        };
+      }
+      else
+      {
+        barrier_desc_dir = [ &S, &lmi_inv, &hess, &n,
+                             &p, &p2, &np2, &p4 ]( const std::vector< double >& x,
+                                                   const std::vector< double >& grad_f_barrier_obj_at_x,
+                                                   std::vector< double >& dx ) -> void
+        {
+          std::vector< double > b( n ), b_inv_sqrt( n );
+          for( int i = 0; i < n; i++ )
+          {
+            /* Diagonal elements of the leading diagonal matrix of the Hessian. NOTE:
+            these values will always be positive, since the Hessian is positive definite
+            for a strictly feasible point (which is what we always have with an interior
+            point method). */
+            b[ i ] = 1.0/pow( x[ i ], 2.0 )-
+                     2.0*pow( cblas_dnrm2( p, &S[ i ], n ), 2.0 )/x[ i ];
+            b_inv_sqrt[ i ] = sqrt( 1.0/b[ i ]);
+          }
+
+          /* Compute T = eye( p^2 ) and R = Diag^{-1/2}(b) R0, where
+          R0 = [ Diag( s_{0}) S, ... Diag( s_{p-1}) S ]. */
+          int col_idx;
+          std::vector< double > R( np2 ), T( p4 );
+          for( int i = 0; i < p; i++ )
+          {
+            /* Elements to element-wise multiply by to form the low-rank term
+            R = Diag^{-1/2}(b) R0, where R0 = [ Diag( s_{0}) S, ... Diag( s_{p-1}) S ]. */
+            vdMul( n, b_inv_sqrt.data( ), &S[ i*n ], dx.data( ));
+
+            for( int j = 0; j < p; j++ )
+            {
+              col_idx = i*p+j;
+              vdMul( n, &S[ j*n ], dx.data( ), &R[ col_idx*n ]);
+              T[ col_idx*p2+col_idx ] = 1.0;
+            }
+          }
+
+          // Compute T := T+R^{T}R = eye( p^2 )+R^{T} R.
+          cblas_dsyrk( ase::constants::layout, ase::constants::uplo, CblasTrans,
+                       p2, n, 1.0, R.data( ), n, 1.0, T.data( ), p2 );
+
+          // Compute eigendecomposition of T.
+          std::vector< double > w( p2 ), V( p4 );
+          MKL_INT m;
+          std::vector< MKL_INT > isuppz( 2*p2 );
+          LAPACKE_dsyevr( ase::constants::layout, 'V', 'A', ase::constants::uplo_char,
+                          p2, T.data( ), p2, 0.0, 0.0, 0.0, 0.0, LAPACKE_dlamch( 'S' ),
+                          &m, w.data( ), V.data( ), p2, isuppz.data( ));
+
+          // Compute V := V Diag^{-1/2}(w) and assign to T.
+          std::vector< double > w_inv_sqrt( p2 );
+          vdInvSqrt( p2, w.data( ), w_inv_sqrt.data( ));
+          T.assign( p4, 0.0 );
+          ase::linalg::diag_matrix_product( w_inv_sqrt, V, T, 1.0, false );
+
+          // Compute Diag^{-1/2}(b) R = Diag^{-1}(b) R0.
+          std::vector< double > diag_b_inv_R( np2 );
+          ase::linalg::diag_matrix_product( b_inv_sqrt, R, diag_b_inv_R );
+
+          // Multiply diag_b_inv_R and T (overwrite R with the result).
+          cblas_dgemm( ase::constants::layout, CblasNoTrans, CblasNoTrans, n, p2, p2,
+                       1.0, diag_b_inv_R.data( ), n, T.data( ), p2, 0.0, R.data( ), n );
+
+          /* Low-rank update for the inverse Hessian (which will be stored in
+          hess) which currently contains Diag^{-1}(b). */
+          cblas_dsyrk( ase::constants::layout, ase::constants::uplo, CblasNoTrans,
+                       n, p2, -1.0, R.data( ), n, 0.0, hess.data( ), n );
+          for( int i = 0; i < n; i++ )
+            hess[ i+n*i ] += 1.0/b[ i ];
+
+          // Compute the descent direction.
+          cblas_dsymv( ase::constants::layout, ase::constants::uplo, n, -1.0,
+                       hess.data( ), n, grad_f_barrier_obj_at_x.data( ), 1, 0.0,
+                       dx.data( ), 1 );
+        };
+      }
+
+      // Define a lambda for the barrier objective function.
+      auto f_barrier_obj = [ &c, &Z, &barrier_parameter, &V, &neg_log_det_C, &call_f_C,
+                             &f_C, &n ]( const std::vector< double >& x ) -> double
+      {
+        // Call f_C if necessary.
+        if( call_f_C )
+          f_C( x, Z, V, neg_log_det_C );
+
+        // Set the call flag.
+        call_f_C = true;
+
+        // Compute the objective function.
+        return barrier_parameter*cblas_ddot( n, x.data( ), 1, c.data( ), 1 )+
+               ase::cvx::log_barrier( x )+neg_log_det_C;
+      };
+
+      // Apply general descent method.
+      return ase::cvx::general_descent_method_with_btls( f_barrier_obj, grad_f_barrier_obj,
+                                                         barrier_desc_dir, x ); //, 30, pow( 10, -6.0 ),
+                                                         // 0.45, 0.8, 500 );
+    };
+
+    // Call general barrier method.
+    ase::cvx::general_barrier_method( f_center, x ); //, 1.0, 10.0, 30, pow( 10.0, -6.0 ));
+
+    // Scale the solution x by Z_fro_norm^2.
+    cblas_dscal( n*p, Z_fro_norm, Z.data( ), 1 );
+    cblas_dscal( n, pow( Z_fro_norm, 2.0 ), x.data( ), 1 );
+    std::cout << "x = " << x[ 0 ] << ", " << x[ 1 ] << ", " << x[ 2 ] << ", " << x[ 3 ] << ", " << x[ 4 ] << std::endl;
+  }
 } // namespace cvx
 } // namespace ase

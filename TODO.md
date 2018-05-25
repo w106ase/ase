@@ -1,13 +1,14 @@
 #TO DO:
 
 ## Coding
-1. Implement a generalized log barrier funtion. One of the arguments to the
-function will be a function for computing the determinant of a matrix. By
-default this argument will use our brute force determinant function.
-1. Generate a test for the log and generalized log barrier functions.
+1. Finish documenting the SDP inequality function. Also, modify the function to
+enable the LMI inverse to be returned (this will be needed for SDR).
+1. Implement a test which generates test data using the MATLAB engine, then uses
+CVX to solve the problem (we will need to make sure we are using MATLAB 2016 for
+the CVX functionality to work).
+1. Generate a complex-valued test for the general barrier method.
+1. Generate a test for the log barrier function.
 1. Implement a general barrier method function for complex-valued inputs.
-1. Finish documenting and implementing the barrier method function test (need to
-add the complex-valued case).
 1. Get MATLAB engine working to develop and test algorithms all in C++
 1. Implement a test routine for the SDR functionality (use MATLAB engine for
 visualizing and verifying functionality).
