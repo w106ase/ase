@@ -47,14 +47,15 @@ void real_valued_example( )
   cout << "Initial objective function value: " << cblas_ddot( n, x.data( ), 1, c.data( ), 1 ) << endl;
   cout << endl;
 
+
   // Define a lambda for the centering function.
   auto f_center = [ &c, &n ]( vector< double >& x, const double& barrier_parameter ) -> bool
   {
     // Define a lambda for the barrier objective function.
     auto f_barrier_obj = [ &c, &barrier_parameter, &n ]( const vector< double >& x ) -> double
     {
-      // Check that x is feasible. If not set the objective function to max. double.
-      return barrier_parameter*cblas_ddot( n, x.data( ), 1, c.data( ), 1 )+ase::cvx::log_barrier( x );
+      // Compute the objective function.
+      return barrier_parameter*cblas_ddot( n, x.data( ), 1, c.data( ), 1 )+ase::cvx::log_barrier( x, true );
     };
 
     // Define a lambda for the gradient of the barrier objective function.
