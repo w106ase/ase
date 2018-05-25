@@ -16,6 +16,7 @@ namespace constants
 {
   const CBLAS_LAYOUT layout( CblasColMajor );
   const CBLAS_UPLO uplo( CblasUpper );
+  const char uplo_char( 'U' );
 } // namespace constants
 } // namespace ase
 #endif // CONSTANTS_H
