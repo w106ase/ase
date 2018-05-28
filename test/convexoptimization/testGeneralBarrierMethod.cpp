@@ -1,5 +1,9 @@
 /*! \file testGeneralBarrierMethod.cpp
     \brief Demonstrates the general barrier method.
+
+    Demonstrates the general barrier method. The specific function that is
+    exercised is:
+    1. general_barrier_method()
 */
 
 #include <iostream>

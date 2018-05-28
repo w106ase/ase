@@ -243,13 +243,14 @@ namespace cvx
 
   void sdp_inequality_form_with_diag_plus_low_rank_lmi( std::vector< double >&x,
                                                         const std::vector< double >& c,
-                                                        std::vector< double >& Z )
+                                                        std::vector< double >& Z,
+                                                        std::vector< double >& lmi_inv )
   {
     // Input dimension.
     int n = x.size( ), p = Z.size( )/n, n2 = n*n, p2 = p*p, np = n*p, np2 = n*p2, p4 = p2*p2;
     double neg_log_det_C;
     bool use_alt_newton_step = p2 < 0.2*n;
-    std::vector< double > V( p*p ), w( p ), lmi_inv( n2 ), hess( n2 ), S( np );
+    std::vector< double > V( p*p ), w( p ), hess( n2 ), S( np );
 
     // Initialize a strictly feasible point x.
     double Z_fro_norm = LAPACKE_dlange( ase::constants::layout, 'F', n, p, Z.data( ), n );

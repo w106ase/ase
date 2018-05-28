@@ -14,9 +14,9 @@ namespace ase
 {
 namespace constants
 {
-  const CBLAS_LAYOUT layout( CblasColMajor );
-  const CBLAS_UPLO uplo( CblasUpper );
-  const char uplo_char( 'U' );
+  const CBLAS_LAYOUT layout( CblasColMajor ); /*!< CBLAS layout */
+  const CBLAS_UPLO uplo( CblasUpper ); /*!< CBLAS uplo */
+  const char uplo_char( 'U' ); /*!< CBLAS uplo character */
 } // namespace constants
 } // namespace ase
 #endif // CONSTANTS_H

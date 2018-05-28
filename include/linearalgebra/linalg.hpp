@@ -27,9 +27,9 @@ namespace linalg
   */
   double determinant( const std::vector< double >& X, const double n );
 
-  /*! \brief Compute the determinant of a square, Hermitian matrix.
+  /*! \brief Compute the determinant of a square, complex-valued matrix.
 
-      \param X square, Hermitian matrix to compute determinant for.
+      \param X square, complex-valued matrix to compute determinant for.
       \param n number of rows and columns in <tt>X</tt>.
 
       \return determinant of <tt>X</tt>.
@@ -80,7 +80,7 @@ namespace linalg
       A\f$).
   */
   void diag_plus_low_rank( const std::vector< double >& x, const std::vector< double >& A,
-                           std::vector< double >& B, const bool& conj_transpose_A = false,
+                           std::vector< double >& B, const bool& transpose_A = false,
                            const double& alpha = 1.0, const double& beta = 1.0 );
 
   /*! \brief Compute the sum of a matrix plus a diagonal plus low-rank term (i.e., \f$B+\alpha \mathrm{Diag}(x)+\beta A A^{\mathrm{H}}\f$ or \f$B+\alpha \mathrm{Diag}(x)+\beta A^{\mathrm{H}} A\f$).

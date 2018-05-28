@@ -2,12 +2,13 @@
     \brief Convex optimization functionality implemented using Intel MKL
     routines.
 
-    Convex optimization functionality using Intel MKL functionality. This
-    functionality includes line search routines, descent methods, and various
-    generic and specialized solvers for convex optimization problems. Much of
-    the provided functionality is project driven with the application being
-    radar signal processing. Thus, where appropriate routines exist for handling
-    both real- and complex-valued inputs.
+    Convex optimization functionality implemented using Intel MKL functionality.
+    This functionality includes line search routines, general descent methods,
+    general barrier methods, and various generic and specialized solvers for
+    convex optimization problems. Much of the provided functionality is project
+    driven with the application being radar signal processing. Thus, where
+    appropriate routines exist for handling both real- and complex-valued
+    inputs.
 */
 
 #ifndef CVXOPT_H
@@ -131,7 +132,7 @@ namespace cvx
       \param x the input vector to calculate the logarithmic barrier function for.
       \param negate_x flag which is true when computing \f$-\sum_{i=0}^{n-1} \mathrm{ln}\left( -[-x]_{i} )\right)\f$
 
-      \return logarithmic barrier function value (i.e., \f$-\sum_{i=0}^{n-1} \left[ x\right]_{i}\f$ or \f$-\sum_{i=0}^{n-1} \mathrm{ln}\left(-\left[ x\right]_{i}\right)\f$).
+      \return logarithmic barrier function value (i.e., \f$-\sum_{i=0}^{n-1} \mathrm{ln}\left(\left[ x\right]_{i}\right)\f$ or \f$-\sum_{i=0}^{n-1} \mathrm{ln}\left(-\left[ x\right]_{i}\right)\f$).
 
       \note The flag <tt>negate_x</tt> should be set so that \f$-x \succ 0\f$.
   */
@@ -147,6 +148,11 @@ namespace cvx
       \f}
       where \f$ c \in R^{n} \f$ and \f$ Z \in R^{n \times p} \f$ are input data.
 
+      \param x the optimization variable.
+      \param c input data vector defining the objective function.
+      \param Z input data matrix defining the inequality constraint.
+      \param lmi_inv linear matrix inequality (LMI) inverse (i.e., \f$\left( \mathrm{Diag}(x)+ZZ^{\mathrm{T}} \right)^{-1} \f$)
+
       \note The input data matrix <tt>Z</tt> does not have a const because the
       data is scaled. However, before a solution is returned the data matrix is
       scaled back to its original value. Thus, even though there is no const
@@ -154,7 +160,8 @@ namespace cvx
   */
   void sdp_inequality_form_with_diag_plus_low_rank_lmi( std::vector< double >&x,
                                                         const std::vector< double >& c,
-                                                        std::vector< double >& Z );
+                                                        std::vector< double >& Z,
+                                                        std::vector< double >& lmi_inv );
 
   // /*! \brief Inequality form SDP (see \cite Boyd2004_ase Pg. 169) interior point method, with a diagonal plus low-rank data linear matrix inequality (LMI)
   //     \f{eqnarray*}{
