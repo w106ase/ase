@@ -19,7 +19,7 @@ set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build )
 
 # Check for MATLAB.
-set( Matlab_ROOT_DIR "/Applications/MATLAB_R2016b.app" )
+set( Matlab_ROOT_DIR "/Applications/MATLAB_R2017b.app" )
 message( STATUS "${Matlab_ROOT_DIR}" )
 find_package( Matlab REQUIRED MX_LIBRARY ENG_LIBRARY )
 include_directories( ${Matlab_INCLUDE_DIRS} )
