@@ -1,9 +1,6 @@
 #TO DO:
 
 ## Coding
-1. Implement a test which generates test data using the MATLAB engine, then uses
-CVX to solve the problem (we will need to make sure we are using MATLAB 2016 for
-the CVX functionality to work).
 1. Generate a test for the log barrier function.
 1. Implement SDP inequality form with diag plus low rank data for complex-valued
 inputs.
