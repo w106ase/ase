@@ -81,8 +81,8 @@ void real_valued_example( )
 
     // Use general descent method to solve the unconstrained barrier problem.
     return ase::cvx::general_descent_method_with_btls( f_barrier_obj, grad_f_barrier_obj,
-                                                       barrier_desc_dir, x, 100, pow( 10, -6.0 ),
-                                                       0.45, 0.8, 500 );
+                                                       barrier_desc_dir, x, 100, 1.0e-6, 1.0e-6,
+                                                       0.1, 0.8, 500 );
   };
 
   // Exercise the general barrier method function.
