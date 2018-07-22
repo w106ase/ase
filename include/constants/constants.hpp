@@ -21,8 +21,8 @@ namespace constants
   const double btls_beta = 0.8; /*!< Backtracking line search alpha */
   const double btls_max_iter = 200; /*!< Backtracking line search maximum iterations */
   const double gbm_barrier_param0 = 1.0; /*!< General barrier method initial barrier parameter */
-  const double gbm_barrier_param_update = 1.5; /*!< General barrier method barrier parameter update */
-  const double gbm_max_iter = 100; /*!< General barrier method maximum iterations */
+  const double gbm_barrier_param_update = 2.0; /*!< General barrier method barrier parameter update */
+  const double gbm_max_iter = 50; /*!< General barrier method maximum iterations */
   const double gbm_sub_opt_thresh = 1.0e-6; /*!< General barrier method suboptimality threshold */
   const double gdm_max_iter = 100; /*!< General descent method maximum iterations */
   const double gdm_norm2_grad_thresh = 1.0e-6; /*!< General descent method norm-squared gradient threshold */
