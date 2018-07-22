@@ -126,7 +126,6 @@ namespace cvx
       \return int indicating the number of outer iterations completed.
 
       \note The initial point, <tt>x</tt>, is overwritten in the function call.
-      \note The variable <tt>barrier_parameter0</tt> is populated with the barrier parameter used during the last iteration.
   */
   int general_barrier_method( const std::function< bool ( std::vector< double >& x, const double& barrier_parameter ) >& f_center,
                                std::vector< double >& x, const double& barrier_parameter0 = ase::constants::gbm_barrier_param0,
