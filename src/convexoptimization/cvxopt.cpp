@@ -269,11 +269,22 @@ namespace cvx
   void dual_sdp_inequality_form_with_diag_plus_low_rank_lmi( const std::vector< double >& c,
                                                              std::vector< double >& Z,
                                                              std::vector< double >& Phi,
+                                                             std::vector< double >& x,
                                                              const double& precision )
   {
     // Solve the primal problem (which also returns a dual optimal value).
     int n = c.size( );
-    std::vector< double > x( n );
+    sdp_inequality_form_with_diag_plus_low_rank_lmi( x, c, Z, Phi, precision );
+  }
+
+  void dual_sdp_inequality_form_with_diag_plus_low_rank_lmi( const std::vector< double >& c,
+                                                             std::vector< std::complex< double > >& Z,
+                                                             std::vector< std::complex< double > >& Phi,
+                                                             std::vector< double >& x,
+                                                             const double& precision )
+  {
+    // Solve the primal problem (which also returns a dual optimal value).
+    int n = c.size( );
     sdp_inequality_form_with_diag_plus_low_rank_lmi( x, c, Z, Phi, precision );
   }
 

@@ -143,9 +143,52 @@ namespace cvx
   */
   double log_barrier( const std::vector< double >& x, const bool& negate_x = false );
 
+  /*! \brief Dual inequality form SDP (see \cite Boyd2004_ase Pg. 169) interior point method, with a diagonal plus low-rank data linear matrix inequality (LMI)
+      \f{eqnarray*}{
+        \max_{\Phi \in S^{n\times n}} &\mathrm{Tr}\left( \Phi Z Z^{\mathrm{T}} \right)& \\
+        \textrm{subject to} &\mathrm{diag}(\Phi)+c = 0,&
+      \f}
+      where \f$ c \in R^{n} \f$ and \f$ Z \in R^{n \times p} \f$ are input data.
+
+      \param c input data vector defining the equality constraint.
+      \param Z input data matrix defining the objective function.
+      \param Phi optimization variable.
+      \param x primal optimization variable.
+      \param precision desired precision for the solution of the problem
+
+      \note The input data matrix <tt>Z</tt> does not have a const because the
+      data is scaled. However, before a solution is returned the data matrix is
+      scaled back to its original value. Thus, even though there is no const
+      with <tt>Z</tt> the value is not changed.
+  */
   void dual_sdp_inequality_form_with_diag_plus_low_rank_lmi( const std::vector< double >& c,
                                                              std::vector< double >& Z,
-                                                             std::vector< double >& lmi_inv,
+                                                             std::vector< double >& Phi,
+                                                             std::vector< double >& x,
+                                                             const double& precision = ase::constants::med_prec );
+
+  /*! \brief Dual inequality form SDP (see \cite Boyd2004_ase Pg. 169) interior point method, with a diagonal plus low-rank data linear matrix inequality (LMI)
+      \f{eqnarray*}{
+        \max_{\Phi \in H^{n\times n}} &\mathrm{Tr}\left( \Phi Z Z^{\mathrm{H}} \right)& \\
+        \textrm{subject to} &\mathrm{diag}(\Phi)+c = 0,&
+      \f}
+      where \f$ c \in R^{n} \f$ and \f$ Z \in C^{n \times p} \f$ are input data.
+
+      \param c input data vector defining the equality constraint.
+      \param Z input data matrix defining the objective function.
+      \param Phi optimization variable.
+      \param x primal optimization variable.
+      \param precision desired precision for the solution of the problem
+
+      \note The input data matrix <tt>Z</tt> does not have a const because the
+      data is scaled. However, before a solution is returned the data matrix is
+      scaled back to its original value. Thus, even though there is no const
+      with <tt>Z</tt> the value is not changed.
+  */
+  void dual_sdp_inequality_form_with_diag_plus_low_rank_lmi( const std::vector< double >& c,
+                                                             std::vector< std::complex< double > >& Z,
+                                                             std::vector< std::complex< double > >& Phi,
+                                                             std::vector< double >& x,
                                                              const double& precision = ase::constants::med_prec );
 
   /*! \brief Inequality form SDP (see \cite Boyd2004_ase Pg. 169) interior point method, with a diagonal plus low-rank data linear matrix inequality (LMI)

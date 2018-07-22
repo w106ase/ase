@@ -1,13 +1,13 @@
-/*! \file testSDPInequalityFormDiagPlusLowRank.cpp
-    \brief Demonstrates the SDP inequality form with diagonal plus low-rank data
-    functions using both real- and complex-valued data.
+/*! \file testDualSDPInequalityFormDiagPlusLowRank.cpp
+    \brief Demonstrates the dual SDP inequality form with diagonal plus low-rank
+    data functions using both real- and complex-valued data.
 
-    Demonstrates the SDP inequality form with diagonal plus low-rank data
+    Demonstrates the dual SDP inequality form with diagonal plus low-rank data
     functions using both real- and complex-valued data. For the demonstrations,
     the result is compared to that obtained using CVX with a MATLAB engine. The
     specific functions that are exercised is/are:
-    1. sdp_inequality_form_with_diag_plus_low_rank_lmi( )
-    2. sdp_inequality_form_with_diag_plus_low_rank_lmi( )
+    1. dual_sdp_inequality_form_with_diag_plus_low_rank_lmi( )
+    2. dual_sdp_inequality_form_with_diag_plus_low_rank_lmi( )
 */
 
 #include <iostream>
@@ -56,7 +56,7 @@ void real_valued_example( Engine *&ep )
 {
   // Generate problem instance in MATLAB.
   engEvalString( ep, "rng( 0 );" );
-  engEvalString( ep, "n = 400;" );
+  engEvalString( ep, "n = 100;" );
   engEvalString( ep, "p = 20;" );
   engEvalString( ep, "c = -ones( n, 1 );" );
   engEvalString( ep, "Z = randn( n, p );" );
@@ -80,10 +80,11 @@ void real_valued_example( Engine *&ep )
     engEvalString( ep, "cvx_precision( 'low' )" );
     engEvalString( ep, "tic;" );
     engEvalString( ep, "cvx_begin quiet sdp" );
-    engEvalString( ep, "variable x( n )" );
-    engEvalString( ep, "minimize( c'*x )" );
+    engEvalString( ep, "variable Phi( n, n ) semidefinite" );
+    engEvalString( ep, "dual variable x" );
+    engEvalString( ep, "maximize( trace( Phi*( Z*Z' )))" );
     engEvalString( ep, "subject to" );
-    engEvalString( ep, "diag( x )+Z*Z' <= 0" );
+    engEvalString( ep, "x : diag( Phi ) == ones( n, 1 )" );
     engEvalString( ep, "cvx_end" );
     engEvalString( ep, "t_cvx_s = toc;" );
     t_cvx_s = mxGetScalar( engGetVariable( ep, "t_cvx_s" ));
@@ -99,50 +100,45 @@ void real_valued_example( Engine *&ep )
   mxDestroyArray( c_ptr );
 
   // Get the solution from MATLAB CVX.
-  vector< double > x( n ), x_cvx( n );
+  vector< double > x( n ), x_cvx( n ), Phi( n*n ), Phi_cvx( n*n );
   if( run_cvx )
   {
   	mxArray *x_ptr = engGetVariable( ep, "x" );
   	memcpy( x_cvx.data( ), mxGetPr( x_ptr ), n*sizeof( mxGetClassName( x_ptr )));
     mxDestroyArray( x_ptr );
+  	mxArray *Phi_ptr = engGetVariable( ep, "Phi" );
+  	memcpy( Phi_cvx.data( ), mxGetPr( Phi_ptr ), n*sizeof( mxGetClassName( Phi_ptr )));
+    mxDestroyArray( Phi_ptr );
   }
 
   // C++ solver.
-  vector< double > lmi_inv( n*n );
   double t_start_s = dsecnd( );
-  ase::cvx::sdp_inequality_form_with_diag_plus_low_rank_lmi( x, c, Z, lmi_inv, 1.0e-3 );
+  ase::cvx::dual_sdp_inequality_form_with_diag_plus_low_rank_lmi( c, Z, Phi, x, 1.0e-3 );
   double t_stop_s = dsecnd( );
   cout << "Estimated C++ function run-time " << t_stop_s-t_start_s << " sec." << endl;
 
   // Create mxArray to store C++ result.
-  mxArray *F_inv = mxCreateDoubleMatrix( n*n, 1, mxREAL );
-  memcpy( mxGetPr( F_inv ), lmi_inv.data( ), n*n*sizeof( double ));
-  engPutVariable( ep, "F_inv", F_inv );
-  engEvalString( ep, "F_inv = reshape( F_inv, n, n );" );
-  engEvalString( ep, "F_inv = F_inv+F_inv'-eye( n );" );
-  mxDestroyArray( F_inv );
+  mxArray *Phi_c = mxCreateDoubleMatrix( n*n, 1, mxREAL );
+  memcpy( mxGetPr( Phi_c ), Phi.data( ), n*n*sizeof( double ));
+  engPutVariable( ep, "Phi_c", Phi_c );
+  engEvalString( ep, "Phi_c = reshape( Phi_c, n, n );" );
+  engEvalString( ep, "Phi_c = Phi_c+Phi_c'-eye( n );" );
+  mxDestroyArray( Phi_c );
   mxArray *x_c = mxCreateDoubleMatrix( n, 1, mxREAL );
   memcpy( mxGetPr( x_c ), x.data( ), n*sizeof( double ));
   engPutVariable( ep, "x_c", x_c );
   mxDestroyArray( x_c );
 
-  // Evaluate suboptimality and maximum eigenvalue.
+  // Evaluate suboptimality and MSE.
+  engEvalString( ep, "c_opt = trace( Phi_c*( Z*Z' ));" );
   if( run_cvx )
   {
-    engEvalString( ep, "max_eig = max( eig( diag( x )+Z*Z' ));" );
-    cout << "Max. Eigenvalue CVX: " << mxGetScalar( engGetVariable( ep, "max_eig" )) << endl;
-  }
-  engEvalString( ep, "max_eig_c = max( eig( diag( x_c )+Z*Z' ));" );
-  cout << "Max. Eigenvalue C++: " << mxGetScalar( engGetVariable( ep, "max_eig_c" )) << endl;
-  engEvalString( ep, "dual = trace( F_inv*( Z*Z' ));" );
-  if( run_cvx )
-  {
-    engEvalString( ep, "mse = mean( abs( x-x_c ).^2 );" );
+    engEvalString( ep, "mse = mean( abs( Phi( : )-Phi_c( : )).^2 );" );
     cout << "MSE: " << mxGetScalar( engGetVariable( ep, "mse" )) << endl;
-    cout << "CVX objective function: " << cblas_ddot( n, x_cvx.data( ), 1, c.data( ), 1 ) << endl;
+    cout << "CVX objective function: " << mxGetScalar( engGetVariable( ep, "cvx_optval" )) << endl;
   }
-  cout << "C++ objective function: " << cblas_ddot( n, x.data( ), 1, c.data( ), 1 ) << endl;
-  cout << "Primal/Dual Difference (i.e., suboptimality): " << cblas_ddot( n, x.data( ), 1, c.data( ), 1 )-mxGetScalar( engGetVariable( ep, "dual" )) << endl;
+  cout << "C++ objective function: " << mxGetScalar( engGetVariable( ep, "c_opt" )) << endl;
+  cout << "Primal/Dual Difference (i.e., suboptimality): " << cblas_ddot( n, x.data( ), 1, c.data( ), 1 )-mxGetScalar( engGetVariable( ep, "c_opt" )) << endl;
   cout << endl;
 }
 
@@ -150,7 +146,7 @@ void complex_valued_example( Engine *&ep )
 {
   // Generate problem instance in MATLAB.
   engEvalString( ep, "rng( 0 );" );
-  engEvalString( ep, "n = 400;" );
+  engEvalString( ep, "n = 100;" );
   engEvalString( ep, "p = 20;" );
   engEvalString( ep, "c = -ones( n, 1 );" );
   engEvalString( ep, "Z = randn( n, p )+1i*randn( n, p );" );
@@ -176,10 +172,11 @@ void complex_valued_example( Engine *&ep )
     engEvalString( ep, "cvx_precision( 'low' )" );
     engEvalString( ep, "tic;" );
     engEvalString( ep, "cvx_begin quiet sdp" );
-    engEvalString( ep, "variable x( n )" );
-    engEvalString( ep, "minimize( c'*x )" );
+    engEvalString( ep, "variable Phi( n, n ) hermitian semidefinite" );
+    engEvalString( ep, "dual variable x" );
+    engEvalString( ep, "maximize( trace( Phi*( Z*Z' )))" );
     engEvalString( ep, "subject to" );
-    engEvalString( ep, "diag( x )+Z*Z' <= 0" );
+    engEvalString( ep, "x : diag( Phi ) == ones( n, 1 )" );
     engEvalString( ep, "cvx_end" );
     engEvalString( ep, "t_cvx_s = toc;" );
     t_cvx_s = mxGetScalar( engGetVariable( ep, "t_cvx_s" ));
@@ -201,53 +198,49 @@ void complex_valued_example( Engine *&ep )
 
   // Get the solution from MATLAB CVX.
   vector< double > x( n ), x_cvx( n );
+  vector< complex< double > > Phi( n*n ), Phi_cvx( n*n );
   if( run_cvx )
   {
   	mxArray *x_ptr = engGetVariable( ep, "x" );
   	memcpy( x_cvx.data( ), mxGetPr( x_ptr ), n*sizeof( mxGetClassName( x_ptr )));
     mxDestroyArray( x_ptr );
+  	mxArray *Phi_ptr = engGetVariable( ep, "Phi" );
+  	memcpy( Phi_cvx.data( ), mxGetPr( Phi_ptr ), n*sizeof( mxGetClassName( Phi_ptr )));
+    mxDestroyArray( Phi_ptr );
   }
 
   // C++ solver.
-  vector< complex< double > > lmi_inv( n*n );
   double t_start_s = dsecnd( );
-  ase::cvx::sdp_inequality_form_with_diag_plus_low_rank_lmi( x, c, Z, lmi_inv, 1.0e-3 );
+  ase::cvx::dual_sdp_inequality_form_with_diag_plus_low_rank_lmi( c, Z, Phi, x, 1.0e-3 );
   double t_stop_s = dsecnd( );
   cout << "Estimated C++ function run-time " << t_stop_s-t_start_s << " sec." << endl;
 
   // Create mxArray to store C++ result.
-  mxArray *F_inv = mxCreateDoubleMatrix( n*n, 1, mxCOMPLEX );
-  vector< double > lmi_inv_re( n*n ), lmi_inv_im( n*n );
-  ase::util::real_vector( lmi_inv, lmi_inv_re );
-  ase::util::imag_vector( lmi_inv, lmi_inv_im );
-  memcpy( mxGetPr( F_inv ), lmi_inv_re.data( ), n*n*sizeof( double ));
-  memcpy( mxGetPi( F_inv ), lmi_inv_im.data( ), n*n*sizeof( double ));
-  engPutVariable( ep, "F_inv", F_inv );
-  engEvalString( ep, "F_inv = reshape( F_inv, n, n );" );
-  engEvalString( ep, "F_inv = F_inv+F_inv'-eye( n );" );
-  mxDestroyArray( F_inv );
+  mxArray *Phi_c = mxCreateDoubleMatrix( n*n, 1, mxCOMPLEX );
+  vector< double > Phi_re( n*n ), Phi_im( n*n );
+  ase::util::real_vector( Phi, Phi_re );
+  ase::util::imag_vector( Phi, Phi_im );
+  memcpy( mxGetPr( Phi_c ), Phi_re.data( ), n*n*sizeof( double ));
+  memcpy( mxGetPi( Phi_c ), Phi_im.data( ), n*n*sizeof( double ));
+  engPutVariable( ep, "Phi_c", Phi_c );
+  engEvalString( ep, "Phi_c = reshape( Phi_c, n, n );" );
+  engEvalString( ep, "Phi_c = Phi_c+Phi_c'-eye( n );" );
+  mxDestroyArray( Phi_c );
   mxArray *x_c = mxCreateDoubleMatrix( n, 1, mxREAL );
   memcpy( mxGetPr( x_c ), x.data( ), n*sizeof( double ));
   engPutVariable( ep, "x_c", x_c );
   mxDestroyArray( x_c );
 
-  // Evaluate suboptimality and maximum eigenvalue.
+  // Evaluate suboptimality and MSE.
+  engEvalString( ep, "c_opt = trace( Phi_c*( Z*Z' ));" );
   if( run_cvx )
   {
-    engEvalString( ep, "max_eig = max( real( eig( diag( x )+Z*Z' )));" );
-    cout << "Max. Eigenvalue CVX: " << mxGetScalar( engGetVariable( ep, "max_eig" )) << endl;
-  }
-  engEvalString( ep, "max_eig_c = max( real( eig( diag( x_c )+Z*Z' )));" );
-  cout << "Max. Eigenvalue C++: " << mxGetScalar( engGetVariable( ep, "max_eig_c" )) << endl;
-  engEvalString( ep, "dual = real( trace( F_inv*( Z*Z' )));" );
-  if( run_cvx )
-  {
-    engEvalString( ep, "mse = mean( abs( x-x_c ).^2 );" );
+    engEvalString( ep, "mse = mean( abs( Phi( : )-Phi_c( : )).^2 );" );
     cout << "MSE: " << mxGetScalar( engGetVariable( ep, "mse" )) << endl;
-    cout << "CVX objective function: " << cblas_ddot( n, x_cvx.data( ), 1, c.data( ), 1 ) << endl;
+    cout << "CVX objective function: " << mxGetScalar( engGetVariable( ep, "cvx_optval" )) << endl;
   }
-  cout << "C++ objective function: " << cblas_ddot( n, x.data( ), 1, c.data( ), 1 ) << endl;
-  cout << "Primal/Dual Difference (i.e., suboptimality): " << cblas_ddot( n, x.data( ), 1, c.data( ), 1 )-mxGetScalar( engGetVariable( ep, "dual" )) << endl;
+  cout << "C++ objective function: " << mxGetScalar( engGetVariable( ep, "c_opt" )) << endl;
+  cout << "Primal/Dual Difference (i.e., suboptimality): " << cblas_ddot( n, x.data( ), 1, c.data( ), 1 )-mxGetScalar( engGetVariable( ep, "c_opt" )) << endl;
   cout << endl;
 }
 #endif
