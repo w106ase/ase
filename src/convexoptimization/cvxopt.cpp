@@ -432,7 +432,9 @@ namespace cvx
           cblas_dsyrk( ase::constants::layout, ase::constants::uplo, CblasTrans,
                        p2, n, 1.0, R.data( ), n, 1.0, T.data( ), p2 );
 
-          // Compute eigendecomposition of T.
+          /* Compute eigendecomposition of T. NOTE: because all values of b are
+          positive and the Hessian is positive definite, from the matrix
+          determinant lemma we know T is positive definite. */
           std::vector< double > w( p2 ), V( p4 );
           MKL_INT m;
           std::vector< MKL_INT > isuppz( 2*p2 );
@@ -486,11 +488,16 @@ namespace cvx
 
       // Apply general descent method (we can settle for a very crude solution here).
       return ase::cvx::general_descent_method_with_btls( f_barrier_obj, grad_f_barrier_obj,
-                                                         barrier_desc_dir, x, 30, precision );
+                                                         barrier_desc_dir, x,
+                                                         ase::constants::gdm_max_iter,
+                                                         precision, ase::constants::gdm_rel_dx_norm2_thresh );
+
     };
 
     // Call general barrier method.
-    ase::cvx::general_barrier_method( f_center, x, 1.0, 2.0, 100, precision );
+    ase::cvx::general_barrier_method( f_center, x, ase::constants::gbm_barrier_param0,
+                                      ase::constants::gbm_barrier_param_update,
+                                      ase::constants::gbm_max_iter, precision );
 
     // Scale the solution x by Z_fro_norm^2.
     double Z_fro_norm2 = pow( Z_fro_norm, 2.0 );
@@ -505,6 +512,9 @@ namespace cvx
                                                         std::vector< std::complex< double > >& lmi_inv,
                                                         const double& precision )
   {
+    if( precision >= 1.0 || precision <= 0.0 )
+      throw std::invalid_argument( "Precision value must be in the interval (0, 1)." );
+
     // Input dimension.
     int n = x.size( ), p = Z.size( )/n, n2 = n*n, p2 = p*p, np = n*p, np2 = n*p2, p4 = p2*p2;
     double neg_log_det_C;
@@ -515,7 +525,7 @@ namespace cvx
     // Initialize a strictly feasible point x.
     double Z_fro_norm = LAPACKE_zlange( ase::constants::layout, 'F', n, p, Z.data( ), n );
     cblas_zdscal( np, 1.0/Z_fro_norm, Z.data( ), 1 );
-    x.assign( n, -( 1.0+pow( 10.0, -6.0 )));
+    x.assign( n, -( 1.0+1.0e-6 ));
 
     /* Define a lambda for computing the eigendecomposition of
     C = eye( p )+Z^{H} Diag^{-1}(x) Z, so that V := V Diag^{-1/2}(w) where w
@@ -530,10 +540,12 @@ namespace cvx
       for( int i = 0; i < p; i++ )
         C[ i+i*p ] = 1.0;
 
-      // Add the term Z^{T} Diag^{-1}(x) Z.
+      // Add the term Z^{T} Diag^{-1}(x) Z and then conjugate to get Z^{H}.
       for( int i = 0; i < n; i++ )
         cblas_zher( ase::constants::layout, ase::constants::uplo,
                     p, 1.0/x[ i ], &Z[ i ], n, C.data( ), p );
+      std::complex< double > one_cplx = { 1.0, 0.0 };
+      mkl_zimatcopy( 'C', 'R', p, p, one_cplx, C.data( ), p, p );
 
       // Compute eigendecomposition of C = V W V^{T}.
       std::vector< double > w( p );
@@ -564,13 +576,15 @@ namespace cvx
           break;
         }
       }
+
       return neg_log_det_C;
     };
 
     // Define a lambda for the f_center function.
     auto f_center = [ &c, &Z, &f_C, &V, &neg_log_det_C, &S, &use_alt_newton_step,
-                      &lmi_inv, &hess, &hess_cplx, &n, &p, &np, &n2, &p2, &np2, &p4 ]( std::vector< double >& x,
-                                                                                       const double& barrier_parameter ) -> bool
+                      &lmi_inv, &hess, &hess_cplx, &precision, &n, &p, &np, &n2,
+                      &p2, &np2, &p4 ]( std::vector< double >& x,
+                      const double& barrier_parameter ) -> bool
     {
       // Compute the eigendecomposition of C = eye( p )+Z^{H} Diag^{-1}(x) Z.
       f_C( x, Z, V, neg_log_det_C );
@@ -591,7 +605,7 @@ namespace cvx
         cblas_zgemm( ase::constants::layout, CblasNoTrans, CblasNoTrans, n, p, p,
                      &one_cplx, diag_x_inv_Z.data( ), n, V.data( ), p, &zero_cplx, S.data( ), n );
 
-        // Compute lmi_inv = -S S^{T}.
+        // Compute lmi_inv = -S S^{H}.
         cblas_zherk( ase::constants::layout, ase::constants::uplo, CblasNoTrans,
                      n, p, -1.0, S.data( ), n, 0.0, lmi_inv.data( ), n );
 
@@ -631,7 +645,7 @@ namespace cvx
       }
       else
       {
-        barrier_desc_dir = [ &S, &lmi_inv, &hess_cplx, &n,
+        barrier_desc_dir = [ &S, &lmi_inv, &hess, &hess_cplx, &n,
                              &p, &p2, &np2, &p4 ]( const std::vector< double >& x,
                                                    const std::vector< double >& grad_f_barrier_obj_at_x,
                                                    std::vector< double >& dx ) -> void
@@ -656,7 +670,8 @@ namespace cvx
           for( int i = 0; i < p; i++ )
           {
             /* Elements to element-wise multiply by to form the low-rank term
-            R = Diag^{-1/2}(b) R0, where R0 = [ Diag( s^{*}_{0}) S, ... Diag( s^{*}_{p-1}) S ]. */
+            R = Diag^{-1/2}(b) R0, where R0 = [ Diag( s^{*}_{0}) S, ... Diag( s^{*}_{p-1}) S ].
+            The s_{i}'s are conjugated below. */
             vzMul( n, b_inv_sqrt.data( ), &S[ i*n ], s_i.data( ));
 
             for( int j = 0; j < p; j++ )
@@ -671,7 +686,9 @@ namespace cvx
           cblas_zherk( ase::constants::layout, ase::constants::uplo, CblasConjTrans,
                        p2, n, 1.0, R.data( ), n, 1.0, T.data( ), p2 );
 
-          // Compute eigendecomposition of T.
+          /* Compute eigendecomposition of T. NOTE: because all values of b are
+          positive and the Hessian is positive definite, from the matrix
+          determinant lemma we know T is positive definite. */
           std::vector< double > w( p2 );
           std::vector< std::complex< double > > V( p4 );
           MKL_INT m;
@@ -701,17 +718,14 @@ namespace cvx
           hess) which currently contains Diag^{-1}(b). */
           cblas_zherk( ase::constants::layout, ase::constants::uplo, CblasNoTrans,
                        n, p2, -1.0, R.data( ), n, 0.0, hess_cplx.data( ), n );
+          ase::util::real_vector( hess_cplx, hess ); // Hessian inverse is purely real
           for( int i = 0; i < n; i++ )
-            hess_cplx[ i+n*i ] += 1.0/b[ i ];
+            hess[ i+n*i ] += 1.0/b[ i ];
 
           // Compute the descent direction.
-          std::complex< double > neg_one_cplx = { -1.0, 0.0 };
-          std::vector< std::complex< double > > grad_f_barrier_obj_at_x_cplx( n ), dx_cplx( n );
-          ase::util::complex_vector( grad_f_barrier_obj_at_x, zeros, grad_f_barrier_obj_at_x_cplx );
-          cblas_zhemv( ase::constants::layout, ase::constants::uplo, n, &neg_one_cplx,
-                       hess_cplx.data( ), n, grad_f_barrier_obj_at_x_cplx.data( ), 1, &zero_cplx,
-                       dx_cplx.data( ), 1 );
-          ase::util::real_vector( dx_cplx, dx );
+          cblas_dsymv( ase::constants::layout, ase::constants::uplo, n, -1.0,
+                       hess.data( ), n, grad_f_barrier_obj_at_x.data( ), 1, 0.0,
+                       dx.data( ), 1 );
         };
       }
 
@@ -733,15 +747,21 @@ namespace cvx
 
       // Apply general descent method.
       return ase::cvx::general_descent_method_with_btls( f_barrier_obj, grad_f_barrier_obj,
-                                                         barrier_desc_dir, x, 30, pow( 10, -6.0 ));
+                                                         barrier_desc_dir, x,
+                                                         ase::constants::gdm_max_iter,
+                                                         precision, ase::constants::gdm_rel_dx_norm2_thresh );
     };
 
     // Call general barrier method.
-    ase::cvx::general_barrier_method( f_center, x, 1.0, 2.0, 30, pow( 10.0, -6.0 ));
+    ase::cvx::general_barrier_method( f_center, x, ase::constants::gbm_barrier_param0,
+                                      ase::constants::gbm_barrier_param_update,
+                                      ase::constants::gbm_max_iter, precision );
 
     // Scale the solution x by Z_fro_norm^2.
-    cblas_zdscal( n*p, Z_fro_norm, Z.data( ), 1 );
-    cblas_dscal( n, pow( Z_fro_norm, 2.0 ), x.data( ), 1 );
+    double Z_fro_norm2 = pow( Z_fro_norm, 2.0 );
+    cblas_zdscal( np, Z_fro_norm, Z.data( ), 1 );
+    cblas_zdscal( n2, 1.0/Z_fro_norm2, lmi_inv.data( ), 1 );
+    cblas_dscal( n, Z_fro_norm2, x.data( ), 1 );
   }
 } // namespace cvx
 } // namespace ase
