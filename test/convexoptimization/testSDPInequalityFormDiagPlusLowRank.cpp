@@ -156,7 +156,7 @@ void complex_valued_example( Engine *&ep )
   int p = ( int ) mxGetScalar( engGetVariable( ep, "p" ));
 
   /* Solve the problem using MATLAB CVX.
-  NOTE: CVX appears to have a bug when n >= 1000. For instance, the CVX output
+  NOTE: CVX appears to have a bug when n >= 500. For instance, the CVX output
   states that dual and primal solutions are obtained which are separated by some
   specified threshold. However, evaluating the objective function for each of
   these solutions shows that the primal objective function value appears to be
