@@ -213,9 +213,9 @@ namespace cvx
     return process_halted;
   }
 
-  void general_barrier_method( const std::function< bool ( std::vector< double >& x, const double& barrier_parameter ) >& f_center,
-                               std::vector< double >& x, const double& barrier_parameter0, const double& barrier_parameter_update,
-                               const int& max_iter, const double& sub_optimality_thresh )
+  int general_barrier_method( const std::function< bool ( std::vector< double >& x, const double& barrier_parameter ) >& f_center,
+                              std::vector< double >& x, const double& barrier_parameter0, const double& barrier_parameter_update,
+                              const int& max_iter, const double& sub_optimality_thresh )
   {
     // Pre-allocations/-calculations.
     int iter = 0, n = x.size( );
@@ -235,6 +235,8 @@ namespace cvx
         barrier_parameter *= barrier_parameter_update;
         iter += 1;
     }
+
+    return iter;
   }
 
   double log_barrier( const std::vector< double >& x, const bool& negate_x )
@@ -262,6 +264,17 @@ namespace cvx
     }
     else
       return std::numeric_limits< double >::infinity( );
+  }
+
+  void dual_sdp_inequality_form_with_diag_plus_low_rank_lmi( const std::vector< double >& c,
+                                                             std::vector< double >& Z,
+                                                             std::vector< double >& Phi,
+                                                             const double& precision )
+  {
+    // Solve the primal problem (which also returns a dual optimal value).
+    int n = c.size( );
+    std::vector< double > x( n );
+    sdp_inequality_form_with_diag_plus_low_rank_lmi( x, c, Z, Phi, precision );
   }
 
   void sdp_inequality_form_with_diag_plus_low_rank_lmi( std::vector< double >&x,
@@ -495,15 +508,15 @@ namespace cvx
     };
 
     // Call general barrier method.
-    ase::cvx::general_barrier_method( f_center, x, ase::constants::gbm_barrier_param0,
-                                      ase::constants::gbm_barrier_param_update,
-                                      ase::constants::gbm_max_iter, precision );
+    int t = ase::cvx::general_barrier_method( f_center, x, ase::constants::gbm_barrier_param0,
+                                              ase::constants::gbm_barrier_param_update,
+                                              ase::constants::gbm_max_iter, precision );
 
     // Scale the solution x by Z_fro_norm^2.
-    double Z_fro_norm2 = pow( Z_fro_norm, 2.0 );
     cblas_dscal( np, Z_fro_norm, Z.data( ), 1 );
-    cblas_dscal( n2, 1.0/Z_fro_norm2, lmi_inv.data( ), 1 );
-    cblas_dscal( n, Z_fro_norm2, x.data( ), 1 );
+    cblas_dscal( n2, -1.0/pow( ase::constants::gbm_barrier_param_update, t ),
+                 lmi_inv.data( ), 1 );
+    cblas_dscal( n, pow( Z_fro_norm, 2.0 ), x.data( ), 1 );
   }
 
   void sdp_inequality_form_with_diag_plus_low_rank_lmi( std::vector< double >& x,
@@ -753,15 +766,15 @@ namespace cvx
     };
 
     // Call general barrier method.
-    ase::cvx::general_barrier_method( f_center, x, ase::constants::gbm_barrier_param0,
-                                      ase::constants::gbm_barrier_param_update,
-                                      ase::constants::gbm_max_iter, precision );
+    int t = ase::cvx::general_barrier_method( f_center, x, ase::constants::gbm_barrier_param0,
+                                              ase::constants::gbm_barrier_param_update,
+                                              ase::constants::gbm_max_iter, precision );
 
     // Scale the solution x by Z_fro_norm^2.
-    double Z_fro_norm2 = pow( Z_fro_norm, 2.0 );
     cblas_zdscal( np, Z_fro_norm, Z.data( ), 1 );
-    cblas_zdscal( n2, 1.0/Z_fro_norm2, lmi_inv.data( ), 1 );
-    cblas_dscal( n, Z_fro_norm2, x.data( ), 1 );
+    cblas_zdscal( n2, -1.0/pow( ase::constants::gbm_barrier_param_update, t ),
+                  lmi_inv.data( ), 1 );
+    cblas_dscal( n, pow( Z_fro_norm, 2.0 ), x.data( ), 1 );
   }
 } // namespace cvx
 } // namespace ase

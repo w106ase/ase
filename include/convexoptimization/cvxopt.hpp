@@ -123,13 +123,12 @@ namespace cvx
       \param max_iter maximum number of iterations to apply the general barrier method.
       \param sub_optimality_thresh sub-optimality threshold for stopping the general barrier method.
 
-      \return flag indicating the general descent method terminated early as a
-      result of a backtracking line search step-size of zero. This may indicate
-      different backtracking line search parameters are needed.
+      \return int indicating the number of outer iterations completed.
 
       \note The initial point, <tt>x</tt>, is overwritten in the function call.
+      \note The variable <tt>barrier_parameter0</tt> is populated with the barrier parameter used during the last iteration.
   */
-  void general_barrier_method( const std::function< bool ( std::vector< double >& x, const double& barrier_parameter ) >& f_center,
+  int general_barrier_method( const std::function< bool ( std::vector< double >& x, const double& barrier_parameter ) >& f_center,
                                std::vector< double >& x, const double& barrier_parameter0 = ase::constants::gbm_barrier_param0,
                                const double& barrier_parameter_update = ase::constants::gbm_barrier_param_update,
                                const int& max_iter = ase::constants::gbm_max_iter, const double& sub_optimality_thresh = ase::constants::gbm_sub_opt_thresh );
@@ -145,8 +144,10 @@ namespace cvx
   */
   double log_barrier( const std::vector< double >& x, const bool& negate_x = false );
 
-  // void max_phase_cut_dual_barrier // General max phase cut
-  // void max_phase_cut_dual_barrier_with_low_rank_data
+  void dual_sdp_inequality_form_with_diag_plus_low_rank_lmi( const std::vector< double >& c,
+                                                             std::vector< double >& Z,
+                                                             std::vector< double >& lmi_inv,
+                                                             const double& precision = ase::constants::med_prec );
 
   /*! \brief Inequality form SDP (see \cite Boyd2004_ase Pg. 169) interior point method, with a diagonal plus low-rank data linear matrix inequality (LMI)
       \f{eqnarray*}{

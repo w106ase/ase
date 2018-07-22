@@ -111,7 +111,7 @@ void real_valued_example( Engine *&ep )
   mxArray *F_inv = mxCreateDoubleMatrix( n*n, 1, mxREAL );
   memcpy( mxGetPr( F_inv ), lmi_inv.data( ), n*n*sizeof( double ));
   engPutVariable( ep, "F_inv", F_inv );
-  engEvalString( ep, "F_inv = reshape( F_inv/F_inv( 1 ), n, n );" );
+  engEvalString( ep, "F_inv = reshape( F_inv, n, n );" );
   engEvalString( ep, "F_inv = F_inv+F_inv'-eye( n );" );
   mxDestroyArray( F_inv );
   mxArray *x_c = mxCreateDoubleMatrix( n, 1, mxREAL );
@@ -217,7 +217,7 @@ void complex_valued_example( Engine *&ep )
   memcpy( mxGetPr( F_inv ), lmi_inv_re.data( ), n*n*sizeof( double ));
   memcpy( mxGetPi( F_inv ), lmi_inv_im.data( ), n*n*sizeof( double ));
   engPutVariable( ep, "F_inv", F_inv );
-  engEvalString( ep, "F_inv = reshape( F_inv/F_inv( 1 ), n, n );" );
+  engEvalString( ep, "F_inv = reshape( F_inv, n, n );" );
   engEvalString( ep, "F_inv = F_inv+F_inv'-eye( n );" );
   mxDestroyArray( F_inv );
   mxArray *x_c = mxCreateDoubleMatrix( n, 1, mxREAL );
