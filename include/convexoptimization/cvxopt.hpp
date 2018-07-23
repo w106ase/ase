@@ -154,6 +154,7 @@ namespace cvx
       \param Z input data matrix defining the objective function.
       \param Phi optimization variable.
       \param x primal optimization variable.
+      \param comp_chol flag that is true when the Cholesky factorization of Phi is desired.
       \param precision desired precision for the solution of the problem
 
       \note The input data matrix <tt>Z</tt> does not have a const because the
@@ -165,6 +166,7 @@ namespace cvx
                                                              std::vector< double >& Z,
                                                              std::vector< double >& Phi,
                                                              std::vector< double >& x,
+                                                             const bool& comp_chol = false,
                                                              const double& precision = ase::constants::med_prec );
 
   /*! \brief Dual inequality form SDP (see \cite Boyd2004_ase Pg. 169) interior point method, with a diagonal plus low-rank data linear matrix inequality (LMI)
@@ -178,6 +180,7 @@ namespace cvx
       \param Z input data matrix defining the objective function.
       \param Phi optimization variable.
       \param x primal optimization variable.
+      \param comp_chol flag that is true when the Cholesky factorization of Phi is desired.
       \param precision desired precision for the solution of the problem
 
       \note The input data matrix <tt>Z</tt> does not have a const because the
@@ -189,6 +192,7 @@ namespace cvx
                                                              std::vector< std::complex< double > >& Z,
                                                              std::vector< std::complex< double > >& Phi,
                                                              std::vector< double >& x,
+                                                             const bool& comp_chol = false,
                                                              const double& precision = ase::constants::med_prec );
 
   /*! \brief Inequality form SDP (see \cite Boyd2004_ase Pg. 169) interior point method, with a diagonal plus low-rank data linear matrix inequality (LMI)

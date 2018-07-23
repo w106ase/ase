@@ -56,7 +56,7 @@ void real_valued_example( Engine *&ep )
 {
   // Generate problem instance in MATLAB.
   engEvalString( ep, "rng( 0 );" );
-  engEvalString( ep, "n = 100;" );
+  engEvalString( ep, "n = 300;" );
   engEvalString( ep, "p = 20;" );
   engEvalString( ep, "c = -ones( n, 1 );" );
   engEvalString( ep, "Z = randn( n, p );" );
@@ -67,12 +67,7 @@ void real_valued_example( Engine *&ep )
   int p = ( int ) mxGetScalar( engGetVariable( ep, "p" ));
 
   /* Solve the problem using MATLAB CVX.
-  NOTE: CVX appears to have a bug when n >= 1000. For instance, the CVX output
-  states that dual and primal solutions are obtained which are separated by some
-  specified threshold. However, evaluating the objective function for each of
-  these solutions shows that the primal objective function value appears to be
-  off by approximately a factor of 2. The problem becomes more exacerbated as
-  the dimension n grows. */
+  NOTE: CVX takes roughly 10 min. or more to run for dimension n > 1000. */
   bool run_cvx = n < 1000;
   double t_cvx_s;
   if( run_cvx )
@@ -112,8 +107,9 @@ void real_valued_example( Engine *&ep )
   }
 
   // C++ solver.
+  bool comp_chol = true;
   double t_start_s = dsecnd( );
-  ase::cvx::dual_sdp_inequality_form_with_diag_plus_low_rank_lmi( c, Z, Phi, x, 1.0e-3 );
+  ase::cvx::dual_sdp_inequality_form_with_diag_plus_low_rank_lmi( c, Z, Phi, x, comp_chol, 1.0e-3 );
   double t_stop_s = dsecnd( );
   cout << "Estimated C++ function run-time " << t_stop_s-t_start_s << " sec." << endl;
 
@@ -122,7 +118,10 @@ void real_valued_example( Engine *&ep )
   memcpy( mxGetPr( Phi_c ), Phi.data( ), n*n*sizeof( double ));
   engPutVariable( ep, "Phi_c", Phi_c );
   engEvalString( ep, "Phi_c = reshape( Phi_c, n, n );" );
-  engEvalString( ep, "Phi_c = Phi_c+Phi_c'-eye( n );" );
+  if( comp_chol )
+    engEvalString( ep, "Phi_c = Phi_c'*Phi_c;" );
+  else
+    engEvalString( ep, "Phi_c = Phi_c+Phi_c'-eye( n );" );
   mxDestroyArray( Phi_c );
   mxArray *x_c = mxCreateDoubleMatrix( n, 1, mxREAL );
   memcpy( mxGetPr( x_c ), x.data( ), n*sizeof( double ));
@@ -146,7 +145,7 @@ void complex_valued_example( Engine *&ep )
 {
   // Generate problem instance in MATLAB.
   engEvalString( ep, "rng( 0 );" );
-  engEvalString( ep, "n = 100;" );
+  engEvalString( ep, "n = 300;" );
   engEvalString( ep, "p = 20;" );
   engEvalString( ep, "c = -ones( n, 1 );" );
   engEvalString( ep, "Z = randn( n, p )+1i*randn( n, p );" );
@@ -210,8 +209,9 @@ void complex_valued_example( Engine *&ep )
   }
 
   // C++ solver.
+  bool comp_chol = true;
   double t_start_s = dsecnd( );
-  ase::cvx::dual_sdp_inequality_form_with_diag_plus_low_rank_lmi( c, Z, Phi, x, 1.0e-3 );
+  ase::cvx::dual_sdp_inequality_form_with_diag_plus_low_rank_lmi( c, Z, Phi, x, true, 1.0e-3 );
   double t_stop_s = dsecnd( );
   cout << "Estimated C++ function run-time " << t_stop_s-t_start_s << " sec." << endl;
 
@@ -224,7 +224,10 @@ void complex_valued_example( Engine *&ep )
   memcpy( mxGetPi( Phi_c ), Phi_im.data( ), n*n*sizeof( double ));
   engPutVariable( ep, "Phi_c", Phi_c );
   engEvalString( ep, "Phi_c = reshape( Phi_c, n, n );" );
-  engEvalString( ep, "Phi_c = Phi_c+Phi_c'-eye( n );" );
+  if( comp_chol )
+    engEvalString( ep, "Phi_c = Phi_c'*Phi_c;" );
+  else
+    engEvalString( ep, "Phi_c = Phi_c+Phi_c'-eye( n );" );
   mxDestroyArray( Phi_c );
   mxArray *x_c = mxCreateDoubleMatrix( n, 1, mxREAL );
   memcpy( mxGetPr( x_c ), x.data( ), n*sizeof( double ));

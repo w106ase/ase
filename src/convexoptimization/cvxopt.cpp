@@ -270,22 +270,32 @@ namespace cvx
                                                              std::vector< double >& Z,
                                                              std::vector< double >& Phi,
                                                              std::vector< double >& x,
+                                                             const bool& comp_chol,
                                                              const double& precision )
   {
     // Solve the primal problem (which also returns a dual optimal value).
     int n = c.size( );
     sdp_inequality_form_with_diag_plus_low_rank_lmi( x, c, Z, Phi, precision );
+
+    // Compute Cholesky factorization.
+    if( comp_chol )
+      LAPACKE_dpotrf( ase::constants::layout, ase::constants::uplo_char, n, Phi.data( ), n );
   }
 
   void dual_sdp_inequality_form_with_diag_plus_low_rank_lmi( const std::vector< double >& c,
                                                              std::vector< std::complex< double > >& Z,
                                                              std::vector< std::complex< double > >& Phi,
                                                              std::vector< double >& x,
+                                                             const bool& comp_chol,
                                                              const double& precision )
   {
     // Solve the primal problem (which also returns a dual optimal value).
     int n = c.size( );
     sdp_inequality_form_with_diag_plus_low_rank_lmi( x, c, Z, Phi, precision );
+
+    // Compute Cholesky factorization.
+    if( comp_chol )
+      LAPACKE_zpotrf( ase::constants::layout, ase::constants::uplo_char, n, Phi.data( ), n );
   }
 
   void sdp_inequality_form_with_diag_plus_low_rank_lmi( std::vector< double >&x,
