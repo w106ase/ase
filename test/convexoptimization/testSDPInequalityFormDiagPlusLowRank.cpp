@@ -22,7 +22,7 @@ using namespace std;
 
 #ifndef DOXYGEN_SKIP
 void real_valued_example( Engine *&ep );
-void complex_valued_example( Engine *&p );
+void complex_valued_example( Engine *&ep );
 
 int main( int argc, char* argv[ ])
 {
