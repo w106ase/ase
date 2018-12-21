@@ -120,7 +120,7 @@ namespace cvx
   {
     // Pre-allocations/-calculations.
     int iter = 0, n = x.size( );
-    double step_size, norm2_x = cblas_dnrm2( n, x.data( ), 1 );
+    double step_size, norm2_x;
     bool process_halted = false;
     std::vector< double > grad_f_obj_at_x( n ), dx( n );
     double rel_dx = std::numeric_limits< double >::infinity( );
@@ -131,13 +131,13 @@ namespace cvx
       grad_f_obj( x, grad_f_obj_at_x );
       desc_dir( x, grad_f_obj_at_x, dx );
 
-      // Check the stopping criterion.
-      if( cblas_dnrm2( n, grad_f_obj_at_x.data( ), 1 ) < norm2_grad_thresh ||
-          rel_dx < rel_dx_norm2_thresh )
+      // Check the stopping criterion based on the 2-norm of the gradient.
+      if( cblas_dnrm2( n, grad_f_obj_at_x.data( ), 1 ) < norm2_grad_thresh )
         break;
 
       /* Backtracking line search.
-      NOTE: x is overwritten in the function call with x+step_size*dx. */
+      NOTE: x is overwritten in the backtracking line search function call with x+step_size*dx. */
+      norm2_x = cblas_dnrm2( n, x.data( ), 1 );
       step_size = backtracking_line_search( f_obj, x, grad_f_obj_at_x, dx, alpha, beta, max_btls_iter );
 
       /* If a step-size of zero is encountered, the backtracking line search is
@@ -145,16 +145,19 @@ namespace cvx
       if( step_size == 0.0 )
       {
         process_halted = true;
-        rel_dx = 0.0;
         break;
       }
       else
       {
         if( norm2_x == 0.0 )
-          norm2_x = cblas_dnrm2( n, x.data( ), 1 );
-
-        rel_dx = step_size*cblas_dnrm2( n, dx.data( ), 1 )/norm2_x;
+          rel_dx = 1.0;
+        else
+          rel_dx = step_size*cblas_dnrm2( n, dx.data( ), 1 )/norm2_x;
       }
+
+      // If the relative threshold is met, then break from the loop.
+      if( rel_dx < rel_dx_norm2_thresh )
+        break;
 
       // Increment the counter.
       iter += 1;
@@ -187,7 +190,8 @@ namespace cvx
         break;
 
       /* Backtracking line search.
-      NOTE: x is overwritten in the function call with x+step_size*dx. */
+      NOTE: x is overwritten in the backtracking line search function call with x+step_size*dx. */
+      norm2_x = cblas_dznrm2( n, x.data( ), 1 );
       step_size = backtracking_line_search( f_obj, x, grad_f_obj_at_x, dx, alpha, beta, max_btls_iter );
 
       /* If a step-size of zero is encountered, the backtracking line search is
@@ -195,16 +199,19 @@ namespace cvx
       if( step_size == 0.0 )
       {
         process_halted = true;
-        rel_dx = 0.0;
         break;
       }
       else
       {
         if( norm2_x == 0.0 )
-          norm2_x = cblas_dznrm2( n, x.data( ), 1 );
-
-        rel_dx = step_size*cblas_dznrm2( n, dx.data( ), 1 )/norm2_x;
+          rel_dx = 1.0;
+        else
+          rel_dx = step_size*cblas_dznrm2( n, dx.data( ), 1 )/norm2_x;
       }
+
+      // If the relative threshold is met, then break from the loop.
+      if( rel_dx < rel_dx_norm2_thresh )
+        break;
 
       // Increment the counter.
       iter += 1;
@@ -219,16 +226,15 @@ namespace cvx
   {
     // Pre-allocations/-calculations.
     int iter = 0, n = x.size( );
-    bool process_halted = false;
     double barrier_parameter = barrier_parameter0;
 
     while( iter < max_iter )
     {
         // Centering step.
-        process_halted = f_center( x, barrier_parameter );
+        f_center( x, barrier_parameter );
 
         // Evaluate the sub-optimality.
-        if( n/barrier_parameter < sub_optimality_thresh || process_halted )
+        if( n/barrier_parameter < sub_optimality_thresh )
           break;
 
         // Increase the barrier parameter and increment the counter.
