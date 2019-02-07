@@ -168,7 +168,7 @@ void complex_valued_example2( )
     {
       if( i == j )
         B_bf[ i*n+j ] = x[ i ];
-      B_bf[ i*n+j ] += A[ j ]*conj( A[ i ]);
+      B_bf[ i*n+j ] += conj( A[ j ])*A[ i ];
     }
   }
 
