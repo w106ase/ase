@@ -1,8 +1,9 @@
+
 #!/bin/sh
 #
 
 # Define function for finding the relative path between two absolute paths.
-relpath(){ python -c "import os.path; print os.path.relpath('$1','${2:-$PWD}')" ; }
+relpath(){ python2.7 -c "import os.path; print os.path.relpath('$1','${2:-$PWD}')" ; }
 
 # Define the filename for the LaTeX config file.
 LTXCFGFILE=".ltxcfg"
@@ -24,10 +25,12 @@ if [ -f "$ltxcfg_file" ]; then
 else
   # Find LaTeX file which contains \begin{document} statement.
   found_main=false
-  for i in `seq 1 2`;
+  for i in `seq 1 3`;
   do
     for file in *.tex; do
       if grep -q \begin{document} "$file"; then
+	echo "found file"
+	echo "$file"
         found_main=true
         break
       fi
@@ -44,27 +47,27 @@ else
   file=$(echo $file | cut -f 1 -d '.')
 
   # Relative path to the main file from original directory.
-  rel_path="$(relpath $(pwd) $orig_dir)/" 
+  rel_path="$(relpath $(pwd) $orig_dir)/"
 
   # Write to file.
   echo "$rel_path$file" >> "$orig_dir/$LTXCFGFILE"
 fi
 
 makeglossaries $file
-pdflatex --synctex=1 $file
+pdflatex -synctex=1 -interaction=nonstopmode $file
 bibtex $file
 
 makeglossaries $file
-pdflatex --synctex=1 $file
+pdflatex -synctex=1 -interaction=nonstopmode $file
 bibtex $file
 
 makeglossaries $file
-pdflatex --synctex=1 $file
+pdflatex -synctex=1 -interaction=nonstopmode $file
 bibtex $file
 
-open -a Skim -g "$file.pdf"
+open -a "Skim.app" -g "$file.pdf"
+#open -a "Adobe Acrobat Reader DC.app" -g "$file.pdf"
 rm -f *.{acn,acr,alg,aux,bbl,blg,fdb_latexmk,fls,glg,glsdefs,ist,log,out,sbl,sym}
 
 # Change back to the original directory.
 cd $orig_dir
-

@@ -125,7 +125,7 @@ namespace linalg
 
     // Add the diagonal components to B.
     for( int i = 0; i < n; i++ )
-      B[ i+i*n ] = alpha*x[ i ];
+      B[ i+i*n ] += alpha*x[ i ];
   }
 
   void diag_plus_low_rank( const std::vector< std::complex< double > >& x,
